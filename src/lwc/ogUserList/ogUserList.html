@@ -1,0 +1,351 @@
+<!--
+ - Created by wmccu on 7/20/2021.
+ -->
+
+<!-- Og User List -->
+<template>
+    <div style="min-height: 10vh">
+        <lightning-card title={title} icon-name="standard:user">
+            <lightning-button label="Add User"
+                              icon-name="utility:add"
+                              slot="actions"
+                              variant="neutral"
+                              onclick={addUser}></lightning-button>
+            <template if:false={hideSaveCancel}>
+                <lightning-button name="save"
+                                  label="Save"
+                                  icon-name="utility:save"
+                                  slot="actions"
+                                  variant="brand"
+                                  onclick={handleSavingUsers}
+                                  disabled={saveIsDisabled}>
+                </lightning-button>
+                <lightning-button name="cancel"
+                                  label="Cancel"
+                                  icon-name="utility:close"
+                                  slot="actions"
+                                  onclick={cancelEditUsers}>
+                </lightning-button>
+            </template>
+            <div class="slds-p-left_xx-small slds-p-top_x-small slds-p-bottom_x-small">
+                <lightning-layout multiple-rows="false">
+                    <lightning-layout-item size="4" flexibility="no-shrink">
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <lightning-input
+                                        label="Search Term"
+                                        data-fieldname="search"
+                                        variant="label-hidden"
+                                        placeholder="Search by Name"
+                                        type="text"
+                                        value={searchTerm}
+                                        onkeyup={startSearchTimer}
+                                        tabindex="0">
+                                </lightning-input>
+                            </div>
+                        </div>
+                    </lightning-layout-item>
+                    <lightning-layout-item flexibility="auto">
+                        <lightning-button label="Clear Search"
+                                          icon-name="utility:clear"
+                                          variant="neutral"
+                                          onclick={clearSearch}></lightning-button>
+                    </lightning-layout-item>
+                    <lightning-layout-item padding="horizontal-small">
+                        <lightning-combobox title="Profile" options={profileOptions} name="ProfileFilter"
+                                            placeholder="Select a Profile" onchange={handleProfileSelection}
+                                            value={currentSelectedProfile}
+                                            variant="label-hidden"></lightning-combobox>
+                    </lightning-layout-item>
+                    <lightning-layout-item padding="horizontal-small">
+                        <lightning-button label="Active Users"
+                                          icon-name="utility:user"
+                                          variant={activeUsersVariant}
+                                          onclick={showActiveUsersOnly}></lightning-button>
+                    </lightning-layout-item>
+                    <lightning-layout-item padding="horizontal-small">
+                        <lightning-button label="Clear Filters"
+                                          icon-name="utility:clear"
+                                          variant="neutral"
+                                          onclick={clearFilters}></lightning-button>
+                    </lightning-layout-item>
+                </lightning-layout>
+            </div>
+            <div class="slds-p-around_xx-small">
+                <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                    <thead>
+                    <tr class="">
+                        <th class="slds-size_1-of-12" scope="col">
+                            <div class="slds-truncate" title="Buttons"></div>
+                        </th>
+                        <th class="slds-size_1-of-12" scope="col">
+                            <a data-id="Name" onclick={sort}>
+                                <div class="slds-truncate" title="User Name">Name</div>
+                            </a>
+                        </th>
+                        <th class="slds-size_1-of-12" scope="col">
+                            <a data-id="Email" onclick={sort}>
+                                <div class="slds-truncate" title="User Email">Email</div>
+                            </a>
+                        </th>
+                        <th class="slds-size_1-of-12" scope="col">
+                            <a data-id="Profile" onclick={sort}>
+                                <div class="slds-truncate" title="Profile">Profile</div>
+                            </a>
+                        </th>
+                        <th class="slds-size_1-of-12" scope="col">
+                            <a data-id="Role" onclick={sort}>
+                                <div class="slds-truncate" title="Role">Role</div>
+                            </a>
+                        </th>
+                        <th class="slds-size_1-of-12" scope="col">
+                            <a data-id="LastLoginDate" onclick={sort}>
+                                <div class="slds-truncate" title="LastLoginDate">Last Login</div>
+                            </a>
+                        </th>
+                        <th class="slds-size_1-of-12" scope="col">
+                            <a data-id="IsActive" onclick={sort}>
+                                <div class="slds-truncate" title="IsActive">IsActive</div>
+                            </a>
+                        </th>
+                        <th class="slds-size_1-of-12" scope="col">
+                            <div class="slds-truncate" title="Action">Actions</div>
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <template for:each={recordsToDisplay} for:item="item" for:index="index">
+                        <tr key={item.index} class="slds-hint-parent" ondblclick={onDoubleClickEdit}>
+                            <td class="slds-size_1-of-12 slds-cell-wrap" data-label="Buttons">
+                                <div title="Buttons">
+                                    <template if:true={item.IsActive}>
+                                        <a href={item.loginAs} target=_blank>
+                                            <lightning-button label="Login As" variant="brand"></lightning-button>
+                                        </a>
+                                    </template>
+                                </div>
+                            </td>
+                            <td class="slds-size_1-of-12 slds-cell-wrap" data-label="User Name">
+                                <div title="User Name">
+                                    <template if:false={isUserEdited}>
+                                        <a href={item.nameURL} target=_blank>{item.Name}</a>
+                                    </template>
+                                    <template if:true={isUserEdited}>
+                                        <lightning-formatted-text
+                                                value={item.Name}></lightning-formatted-text>
+                                    </template>
+                                </div>
+                            </td>
+                            <td class="slds-size_1-of-12 slds-cell-wrap" data-label="User Email">
+                                <div title="User Email">
+                                    <lightning-formatted-email value={item.Email}></lightning-formatted-email>
+                                </div>
+                            </td>
+                            <td class="slds-size_1-of-12 slds-cell-wrap" data-label="User Profile">
+                                <div title="User Profile">
+                                    <template if:false={isUserEdited}>
+                                        <a href={item.profileURL} target=_blank>{item.profileName}</a>
+                                    </template>
+                                    <template if:true={isUserEdited}>
+                                        <lightning-combobox title="Profile" options={profileOptions}
+                                                            name="ProfileFilter"
+                                                            data-rowid={item.Id} data-fieldname="ProfileId"
+                                                            placeholder="Select a Profile"
+                                                            onchange={handleComboBoxChange}
+                                                            value={item.ProfileId}
+                                                            variant="label-hidden"></lightning-combobox>
+                                    </template>
+                                </div>
+                            </td>
+                            <td class="slds-size_1-of-12 slds-cell-wrap" data-label="User Role">
+                                <div title="User Role">
+                                    <template if:false={isUserEdited}>
+                                        <a href={item.roleURL} target=_blank>{item.roleName}</a>
+                                    </template>
+                                    <template if:true={isUserEdited}>
+                                        <lightning-combobox title="Role" options={roleOptions}
+                                                            name="RoleFilter"
+                                                            data-rowid={item.Id} data-fieldname="UserRoleId"
+                                                            placeholder="Select a Role"
+                                                            onchange={handleComboBoxChange}
+                                                            value={item.UserRoleId}
+                                                            variant="label-hidden"></lightning-combobox>
+                                    </template>
+                                </div>
+                            </td>
+                            <td class="slds-size_1-of-12 slds-cell-wrap" data-label="Last Login Date">
+                                <div title="Last Login Date">
+                                    <lightning-formatted-date-time value={item.LastLoginDate} year="numeric"
+                                                                   month="short" day="2-digit"
+                                    ></lightning-formatted-date-time>
+                                </div>
+                            </td>
+                            <td class="slds-size_1-of-12 slds-col slds-cell-wrap" data-label="User IsActive">
+                                <div title="User IsActive">
+                                    <template if:false={isUserEdited}>
+                                        <lightning-input type="checkbox" label=""
+                                                         checked={item.IsActive}
+                                                         read-only="true"></lightning-input>
+                                    </template>
+                                    <template if:true={isUserEdited}>
+                                        <lightning-input type="checkbox" label=""
+                                                         data-rowid={item.Id} data-fieldname="IsActive"
+                                                         onchange={handleCheckboxChange}
+                                                         checked={item.IsActive}></lightning-input>
+                                    </template>
+                                </div>
+                            </td>
+                            <td class="slds-size_1-of-12 slds-col" data-label="actions">
+                                <a key={item.key} data-userid={item.Id} onclick={copyUserId}>
+                                    <lightning-icon icon-name="utility:copy" aria-label="Copy Id"
+                                                    alternative-text="Copy User Id to Clipboard" size="x-small"
+                                    ></lightning-icon>
+                                </a>
+                                <!--                                <a key={item.key} data-userid={item.Id} onclick={freezeUser}>-->
+                                <!--                                    <lightning-icon icon-name="utility:frozen" alternative-text="freeze"-->
+                                <!--                                                    aria-label="Freeze User" size="x-small"-->
+                                <!--                                                    variant="success"></lightning-icon>-->
+                                <!--                                </a>-->
+                            </td>
+                        </tr>
+                    </template>
+                    </tbody>
+                </table>
+                <lightning-layout multiple-rows="false" horizontal-align="spread" vertical-align="center">
+                    <lightning-layout-item size="1">
+                        <lightning-helptext icon-name="utility:signpost" class="slds-float_left"
+                                            content="Click column headers to sort. Double-Click to edit users. Use download button (lower right of table) to get filtered users as CSV.">
+                        </lightning-helptext>
+                    </lightning-layout-item>
+                    <lightning-layout-item>
+                        <div class="slds-m-around_small slds-align_absolute-center">
+                            <div slot="actions">
+                                <lightning-button
+                                        variant="neutral"
+                                        title="first"
+                                        label="First"
+                                        class="slds-float_left"
+                                        icon-name="utility:chevronleft"
+                                        icon-position="left"
+                                        onclick={handleClick}
+                                ></lightning-button>
+                                <lightning-button
+                                        variant="neutral"
+                                        title="previous"
+                                        class="slds-float_left"
+                                        label="Previous"
+                                        icon-name="utility:chevronleft"
+                                        icon-position="left"
+                                        onclick={handleClick}
+                                ></lightning-button>
+                                <lightning-button variant="neutral"
+                                                  title="pagenumber"
+                                                  label={pageNumberOf}
+                                                  icon-name="">
+                                </lightning-button>
+                                <lightning-button
+                                        variant="neutral"
+                                        title="last"
+                                        class="slds-float_right"
+                                        label="Last"
+                                        icon-name="utility:chevronright"
+                                        icon-position="right"
+                                        onclick={handleClick}
+                                ></lightning-button>
+                                <lightning-button
+                                        variant="neutral"
+                                        title="next"
+                                        class="slds-float_right"
+                                        label="Next"
+                                        icon-name="utility:chevronright"
+                                        icon-position="right"
+                                        onclick={handleClick}
+                                ></lightning-button>
+                            </div>
+                        </div>
+                    </lightning-layout-item>
+                    <lightning-layout-item size="1">
+                        <lightning-button-icon class="slds-float_right" onclick={downloadCSVFile}
+                                               alternative-text="Click to download list as CSV"
+                                               icon-name="utility:download"></lightning-button-icon>
+                    </lightning-layout-item>
+                </lightning-layout>
+            </div>
+        </lightning-card>
+    </div>
+    <template if:true={showAddUser}>
+        <!-- Modal/Popup Box LWC starts here -->
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
+                 aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <lightning-record-edit-form record-id={recordId} object-api-name="User"
+                                            onsuccess={handleAddUserSuccess} onsubmit={handleAddUserSubmit}>
+                    <!-- Modal/Popup Box LWC header here -->
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                                title="Close" onclick={closeAddUser}>
+                            <lightning-icon icon-name="utility:close"
+                                            alternative-text="close"
+                                            variant="inverse"
+                                            size="small"></lightning-icon>
+                            <span class="slds-assistive-text">Close</span>
+                        </button>
+                        <h1 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Add User</h1>
+                    </header>
+                    <!-- Modal/Popup Box LWC body starts here -->
+                    <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                        <div>
+                            <lightning-messages>
+                            </lightning-messages>
+                            <lightning-layout>
+                                <lightning-layout-item class="slds-size_1-of-2">
+                                    <lightning-input-field field-name="FirstName">
+                                    </lightning-input-field>
+                                    <lightning-input-field field-name="LastName">
+                                    </lightning-input-field>
+                                    <lightning-input-field field-name="Email">
+                                    </lightning-input-field>
+                                    <lightning-input-field field-name="Alias">
+                                    </lightning-input-field>
+                                    <lightning-input-field field-name="CommunityNickname">
+                                    </lightning-input-field>
+                                    <lightning-input-field field-name="Username">
+                                    </lightning-input-field>
+                                    <lightning-input-field field-name="FederationIdentifier">
+                                    </lightning-input-field>
+                                </lightning-layout-item>
+                                <lightning-layout-item class="slds-size_1-of-2">
+                                    <lightning-input-field field-name="EmailEncodingKey">
+                                    </lightning-input-field>
+                                    <lightning-input-field field-name="LanguageLocaleKey">
+                                    </lightning-input-field>
+                                    <lightning-input-field field-name="LocaleSidKey">
+                                    </lightning-input-field>
+                                    <lightning-input-field field-name="UserRoleId">
+                                    </lightning-input-field>
+                                    <lightning-input-field field-name="ProfileId">
+                                    </lightning-input-field>
+                                    <lightning-input-field field-name="TimeZoneSidKey">
+                                    </lightning-input-field>
+                                    <lightning-input-field field-name="ManagerId">
+                                    </lightning-input-field>
+                                </lightning-layout-item>
+                            </lightning-layout>
+                        </div>
+                    </div>
+                    <!-- Modal/Popup Box LWC footer starts here -->
+                    <footer class="slds-modal__footer">
+                        <lightning-button class="slds-m-top_small" variant="neutral" title="Cancel"
+                                          onclick={closeAddUser}
+                                          label="Cancel">
+                        </lightning-button>
+                        <lightning-button class="slds-m-top_small" variant="brand" type="submit" name="update"
+                                          label="Add User">
+                        </lightning-button>
+                    </footer>
+                </lightning-record-edit-form>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>
