@@ -6,6 +6,10 @@
         <name>ApexClass</name>
     </types>
     <types>
+        <members>Manage_Users</members>
+        <name>CustomTab</name>
+    </types>
+    <types>
         <members>ogUserList</members>
         <name>LightningComponentBundle</name>
     </types>

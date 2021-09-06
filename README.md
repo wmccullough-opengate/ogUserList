@@ -7,6 +7,8 @@
 
 A LWC that is searchable, filterable, and sortable. Supports easy search and login as a user.
 
+Includes a Lightning Tab called 'Manage Users'. Give yourself access to this tab to begin using the component.  You can add the tab to an app or create a shortcut to it.
+
 # Supported Features:
 1) Search by name as you type.
 2) Add User using minimal modal record edit form.
