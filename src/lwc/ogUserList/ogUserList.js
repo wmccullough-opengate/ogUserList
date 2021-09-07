@@ -128,7 +128,14 @@ export default class OgUserList extends LightningElement {
     startSearchTimer(event) {
         this.searchTerm = event.target.value;
         clearTimeout(this.timerId);
-        this.timerId = setTimeout(this.handleSearch().bind(this), 500);
+        this.timerId = window.setTimeout(() => {
+            if (!this.searchTerm) {
+                this.errorMsg = "Please enter user name to search.";
+                this.users = undefined;
+                return;
+            }
+            this.getListUsers(this.searchTerm)
+        }, 300);
     }
 
     clearSearch() {
@@ -141,15 +148,6 @@ export default class OgUserList extends LightningElement {
         this.currentSelectedProfile = undefined;
         this.activeUsersVariant = "neutral";
         this.activeOnly = false;
-        this.getListUsers(this.searchTerm);
-    }
-
-    handleSearch() {
-        if (!this.searchTerm) {
-            this.errorMsg = "Please enter user name to search.";
-            this.users = undefined;
-            return;
-        }
         this.getListUsers(this.searchTerm);
     }
 
