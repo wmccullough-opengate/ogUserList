@@ -82,12 +82,10 @@ export default class OgUserList extends LightningElement {
             }
         });
         this.getListUsers("");
-    }
-
-    renderedCallback() {
-        setTimeout(function () {
-            this.setFocusSearchField();
-        }, 100);
+        window.setTimeout(() => {
+            const searchInput = this.template.querySelector("lightning-input[data-fieldname='search']");
+            if (searchInput) searchInput.focus();
+        }, 1000);
     }
 
     setFocusSearchField() {
