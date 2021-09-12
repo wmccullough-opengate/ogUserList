@@ -270,8 +270,10 @@ export default class OgUserList extends LightningElement {
         this.handleReset(event);
     }
 
-    sort(event) {
-        if (this.sortedColumn === event.currentTarget.dataset.id) {
+    sortUsers(event) {
+        console.log('sortUsers');
+        // console.log(JSON.stringify(event.currentTarget.dataset));
+        if (this.sortedColumn === event.currentTarget.dataset.sortapi) {
             this.sortedDirection = this.sortedDirection === "asc" ? "desc" : "asc";
         } else {
             this.sortedDirection = "asc";
@@ -279,10 +281,13 @@ export default class OgUserList extends LightningElement {
         let reverse = this.sortedDirection === "asc" ? 1 : -1;
         let table = JSON.parse(JSON.stringify(this.users));
         table.sort((a, b) => {
-            return a[event.currentTarget.dataset.id] > b[event.currentTarget.dataset.id] ? 1 * reverse : -1 * reverse;
+            return a[event.currentTarget.dataset.sortapi] > b[event.currentTarget.dataset.sortapi] ? 1 * reverse : -1 * reverse;
         });
-        this.sortedColumn = event.currentTarget.dataset.id;
-        this.users = table;
+        // console.log(table);
+        this.sortedColumn = event.currentTarget.dataset.sortapi;
+        this.users = [...table];
+        this.setRecordsToDisplay();
+        this.setFocusSearchField();
     }
 
     showToastMessage(title, message, variant) {

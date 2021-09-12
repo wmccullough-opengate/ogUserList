@@ -54,7 +54,7 @@ public with sharing class ogUserListController {
     }
     private static String getBaseUserQuery() {
         return 'SELECT Id, Name, Email, IsActive, LastLoginDate, UserRoleId, ' +
-                'UserRole.Name, ProfileId, Profile.Name ' +
+                'UserRole.Name, ProfileId, Profile.Name, Username ' +
                 'FROM User';
     }
     private static List<Profile> getProfiles() {

@@ -79,32 +79,37 @@
                             <div class="slds-truncate" title="Buttons"></div>
                         </th>
                         <th class="slds-size_1-of-12" scope="col">
-                            <a data-id="Name" onclick={sort}>
+                            <a onclick={sortUsers} data-sortapi="Name">
                                 <div class="slds-truncate" title="User Name">Name</div>
                             </a>
                         </th>
                         <th class="slds-size_1-of-12" scope="col">
-                            <a data-id="Email" onclick={sort}>
+                            <a onclick={sortUsers} data-sortapi="Email">
                                 <div class="slds-truncate" title="User Email">Email</div>
                             </a>
                         </th>
                         <th class="slds-size_1-of-12" scope="col">
-                            <a data-id="Profile" onclick={sort}>
+                            <a onclick={sortUsers} data-sortapi="Username">
+                                <div class="slds-truncate" title="Username">Username</div>
+                            </a>
+                        </th>
+                        <th class="slds-size_1-of-12" scope="col">
+                            <a onclick={sortUsers} data-sortapi="Profile.Name">
                                 <div class="slds-truncate" title="Profile">Profile</div>
                             </a>
                         </th>
                         <th class="slds-size_1-of-12" scope="col">
-                            <a data-id="Role" onclick={sort}>
+                            <a onclick={sortUsers} data-sortapi="Role">
                                 <div class="slds-truncate" title="Role">Role</div>
                             </a>
                         </th>
                         <th class="slds-size_1-of-12" scope="col">
-                            <a data-id="LastLoginDate" onclick={sort}>
+                            <a onclick={sortUsers} data-sortapi="LastLoginDate">
                                 <div class="slds-truncate" title="LastLoginDate">Last Login</div>
                             </a>
                         </th>
                         <th class="slds-size_1-of-12" scope="col">
-                            <a data-id="IsActive" onclick={sort}>
+                            <a onclick={sortUsers} data-sortapi="IsActive">
                                 <div class="slds-truncate" title="IsActive">IsActive</div>
                             </a>
                         </th>
@@ -139,6 +144,11 @@
                             <td class="slds-size_1-of-12 slds-cell-wrap" data-label="User Email">
                                 <div title="User Email">
                                     <lightning-formatted-email value={item.Email}></lightning-formatted-email>
+                                </div>
+                            </td>
+                            <td class="slds-size_1-of-12 slds-cell-wrap" data-label="Username">
+                                <div title="Username">
+                                    <lightning-formatted-text value={item.Username}></lightning-formatted-text>
                                 </div>
                             </td>
                             <td class="slds-size_1-of-12 slds-cell-wrap" data-label="User Profile">
