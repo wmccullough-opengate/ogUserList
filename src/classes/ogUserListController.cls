@@ -3,7 +3,7 @@
  */
 
 public with sharing class ogUserListController {
-    @AuraEnabled(Cacheable=false)
+    @AuraEnabled(Cacheable=true)
     public static List<ogUserListWrapper> getOGUserListWrapper() {
         List<ogUserListWrapper> ogUserListWrappers = new List<ogUserListWrapper>();
         ogUserListWrapper wrapper = new ogUserListWrapper();
@@ -14,7 +14,7 @@ public with sharing class ogUserListController {
         ogUserListWrappers.add(wrapper);
         return ogUserListWrappers;
     }
-    @AuraEnabled(Cacheable=false)
+    @AuraEnabled(Cacheable=true)
     public static List<User> getUsers(String searchTerm, Boolean activeOnly, String selectedProfileId) {
         String numberRecords = '100';
         List<User> userList = new List<User>();
@@ -39,7 +39,7 @@ public with sharing class ogUserListController {
         userList = Database.query(query);
         return userList;
     }
-    @AuraEnabled
+    @AuraEnabled(Cacheable=false)
     public static String saveUsers(List<User> users) {
         String message = 'Saved Users';
         try {
