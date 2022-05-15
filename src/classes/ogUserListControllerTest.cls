@@ -12,7 +12,21 @@ private class ogUserListControllerTest {
                 LocaleSidKey = 'en_US', ProfileId = profile.Id,
                 TimeZoneSidKey = 'America/New_York', Username = 'standardtestuser' + getRandomNumberString() + '@testorg.com');
         insert standardUser;
-
+        PermissionSet permissionSet1 = new PermissionSet(
+                Name = 'testPermission1',
+                Label = 'testPermission1'
+        );
+        insert permissionSet1;
+        PermissionSetAssignment permissionSetAssignment = new PermissionSetAssignment(
+                AssigneeId = standardUser.Id,
+                PermissionSetId = permissionSet1.Id
+        );
+        insert permissionSetAssignment;
+        PermissionSet permissionSet2 = new PermissionSet(
+                Name = 'testPermission2',
+                Label = 'testPermission2'
+        );
+        insert permissionSet2;
         Profile sysAdminProfile = [SELECT Id FROM Profile WHERE Name = 'System Administrator'];
         User sysAdminUser = new User(Alias = 'sysadm22', Email = 'sysadminuser22@testorg.com',
                 EmailEncodingKey = 'UTF-8', LastName = 'AdminUser', LanguageLocaleKey = 'en_US',
@@ -108,6 +122,43 @@ private class ogUserListControllerTest {
             String message = ogUserListController.saveUsers(users);
             System.debug(message);
             System.assert(message.startsWith('Error'));
+        }
+        Test.stopTest();
+    }
+
+    @IsTest
+    static void getPermissionSetAssignmentShouldReturn() {
+        User standardUser = [SELECT Id, Name FROM User WHERE LastName = 'StandardUser09178'];
+        Test.startTest();
+        {
+            List<PermissionSetAssignment> permissionSetAssignments = ogUserListController.getPermissionSetsForUser(String.valueOf(standardUser.Id));
+            System.assert(permissionSetAssignments.size() > 0);
+        }
+        Test.stopTest();
+    }
+    @IsTest
+    static void savingNewPermissionSetAssignmentShouldWork() {
+        User standardUser = [SELECT Id, Name FROM User WHERE LastName = 'StandardUser09178'];
+        PermissionSet testPermission2 = [SELECT Id FROM PermissionSet WHERE Label = 'testPermission2'];
+        Test.startTest();
+        {
+            ogUserListController.saveNewPermissionSetAssignment(String.valueOf(standardUser.Id), String.valueOf(testPermission2.Id));
+        }
+        Test.stopTest();
+    }
+    @IsTest
+    static void deletingPermissionSetAssignmentShouldWork() {
+        User standardUser = [SELECT Id, Name FROM User WHERE LastName = 'StandardUser09178'];
+        List<PermissionSetAssignment> permissionSetAssignments = [
+                SELECT Id
+                FROM PermissionSetAssignment
+                WHERE AssigneeId = :standardUser.Id
+                LIMIT 1
+        ];
+        PermissionSetAssignment permissionSetAssignment = (permissionSetAssignments.size() == 1) ? permissionSetAssignments.get(0) : null;
+        Test.startTest();
+        {
+            ogUserListController.deletePermissionSetAssignment(String.valueOf(permissionSetAssignment.Id));
         }
         Test.stopTest();
     }

@@ -1,4 +1,8 @@
-.slds-modal__container{
-    max-width: 70rem !important;
-    width:70% !important;
+.slds-modal__container {
+    max-width: 80rem !important;
+    width: 80% !important;
+}
+
+.permSetTable {
+    overflow-x: hidden !important;
 }

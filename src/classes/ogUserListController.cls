@@ -11,6 +11,7 @@ public with sharing class ogUserListController {
         wrapper.loginNonce = generateRandomString(64);
         wrapper.profiles = getProfiles();
         wrapper.roles = getRoles();
+        wrapper.permissionSets = getPermissionSets();
         ogUserListWrappers.add(wrapper);
         return ogUserListWrappers;
     }
@@ -49,18 +50,44 @@ public with sharing class ogUserListController {
         }
         return message;
     }
-    @AuraEnabled(Cacheable=true)
+    @AuraEnabled(Cacheable=false)
     public static List<PermissionSetAssignment> getPermissionSetsForUser(String userId) {
         List<PermissionSetAssignment> permissionSetAssignments = new List<PermissionSetAssignment>();
         if (String.isEmpty(userId)) {
             return permissionSetAssignments;
         }
         permissionSetAssignments = [
-                SELECT Id, AssigneeId, PermissionSetId, PermissionSet.Name
+                SELECT Id, AssigneeId, PermissionSetId, PermissionSet.Name, SystemModstamp, PermissionSet.Label
                 FROM PermissionSetAssignment
                 WHERE AssigneeId = :userId
+                AND (NOT PermissionSet.Name LIKE 'X%')
+                ORDER BY PermissionSet.Label
         ];
         return permissionSetAssignments;
+    }
+
+    @AuraEnabled
+    public static void saveNewPermissionSetAssignment(String userId, String permissionSetId) {
+        if (String.isEmpty(userId) || String.isEmpty(permissionSetId)) {
+            return;
+        }
+        PermissionSetAssignment permissionSetAssignment = new PermissionSetAssignment(
+                AssigneeId = Id.valueOf(userId),
+                PermissionSetId = Id.valueOf(permissionSetId)
+        );
+        try {
+            insert permissionSetAssignment;
+        } catch (Exception e) {
+            System.debug(e.getMessage());
+        }
+    }
+    @AuraEnabled
+    public static void deletePermissionSetAssignment(String recordId) {
+        if (String.isEmpty(recordId)) {
+            return;
+        }
+        PermissionSetAssignment permissionSetAssignment = new PermissionSetAssignment(Id = Id.valueOf(recordId));
+        delete permissionSetAssignment;
     }
     @AuraEnabled
     public static void resetUserPassword(String userId) {
@@ -94,6 +121,15 @@ public with sharing class ogUserListController {
     private static List<UserRole> getRoles() {
         return [SELECT Id, Name FROM UserRole ORDER BY Name];
     }
+    private static List<PermissionSet> getPermissionSets() {
+        return [
+                SELECT Id, Label
+                FROM PermissionSet
+                WHERE (NOT Label LIKE '00%')
+                ORDER BY Label
+                LIMIT 200
+        ];
+    }
     private static String generateRandomString(Integer len) {
         final String chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz';
         String randStr = '';
@@ -112,5 +148,7 @@ public with sharing class ogUserListController {
         public List<Profile> profiles { get; set; }
         @AuraEnabled
         public List<UserRole> roles { get; set; }
+        @AuraEnabled
+        public List<PermissionSet> permissionSets { get; set; }
     }
 }

@@ -8,19 +8,25 @@ import getOGUserListWrapper from "@salesforce/apex/ogUserListController.getOGUse
 import saveUsers from "@salesforce/apex/ogUserListController.saveUsers";
 import toggleFreezeUsers from "@salesforce/apex/ogUserListController.toggleFreezeUser";
 import resetUserPassword from "@salesforce/apex/ogUserListController.resetUserPassword";
+import getPermissionSets from "@salesforce/apex/ogUserListController.getPermissionSetsForUser";
+import deletePermissionSetAssignment from "@salesforce/apex/ogUserListController.deletePermissionSetAssignment";
+import createPermissionSetAssignment from "@salesforce/apex/ogUserListController.saveNewPermissionSetAssignment";
 import {ShowToastEvent} from "lightning/platformShowToastEvent";
 
 
 export default class OgUserList extends LightningElement {
     @api searchTerm;
     @track users = [];
+    @track userPermissionSetAssignments = [];
     @track wrapper = [];
     @track profileOptions = [];
     @track roleOptions = [];
+    @track permissionSetOptions = [];
     @track isPartnerEdited = false;
     @track hideSaveCancel = false;
     @track isUserEdited = false;
     @track saveIsDisabled = true;
+    @track canSaveAssignment = false;
     @track showModal = false;
     @track showAddUser = false;
     @track showFreezeResetConfirmation = false;
@@ -28,6 +34,7 @@ export default class OgUserList extends LightningElement {
     @track activeUsersVariant = "neutral";
     @track recordsToDisplay = [];
     @track currentSelectedProfile;
+    @track currentSelectPermissionSet;
     confirmationTitle = "";
     confirmationIcon = "";
     confirmationUserId = "";
@@ -53,6 +60,38 @@ export default class OgUserList extends LightningElement {
     error;
     timerId;
 
+    permissionSetAssignmentColumns = [
+        {
+            type: "button-icon",
+            typeAttributes:
+                {
+                    iconName: "action:delete",
+                    name: "Delete",
+                    iconClass: "slds-icon-text",
+                    title: "Delete"
+                },
+            fixedWidth: 32
+        },
+        {
+            label: "Permission Set",
+            fieldName: "permissionSetURL",
+            type: "url",
+            typeAttributes: {
+                label: {fieldName: "permissionSetName"},
+                target: "_blank"
+            },
+            initialWidth: 450
+        },
+        {
+            label: "Created Date", fieldName: "SystemModstamp",
+            cellAttributes: {
+                class: {
+                    fieldName: "format"
+                }
+            },
+            initialWidth: 200
+        }
+    ];
 
     get title() {
         return "Manage Users (Today is: " + this.today + ")";
@@ -83,6 +122,11 @@ export default class OgUserList extends LightningElement {
                 this.roleOptions = [...this.roleOptions, {value: "", label: ""}];
                 for (let i = 0; i < roles.length; i++) {
                     this.roleOptions = [...this.roleOptions, {value: roles[i].Id, label: roles[i].Name}];
+                }
+                const permissionSets = result[0].permissionSets;
+                this.permissionSetOptions = [...this.permissionSetOptions, {value: "", label: ""}];
+                for (let i = 0; i < permissionSets.length; i++) {
+                    this.permissionSetOptions = [...this.permissionSetOptions, {value: permissionSets[i].Id, label: permissionSets[i].Label}];
                 }
             }
         });
@@ -307,8 +351,92 @@ export default class OgUserList extends LightningElement {
         this.userAction = '';
     }
 
-    managePermissionSets() {
+    managePermissionSets(event) {
+        const rowUserId = event.currentTarget.dataset.userid;
+        this.confirmationUserName = event.currentTarget.dataset.username;
+        this.confirmationUserId = event.currentTarget.dataset.userid;
+        this.confirmationIcon = 'action:manage_perm_sets';
+        this.confirmationTitle = 'Manage Permission Sets for ' + this.confirmationUserName;
+        this.showModal = true;
+        this.showManagePermissionSets = true;
+        this.getPermissionSetAssignments(rowUserId);
+    }
 
+    getPermissionSetAssignments(userId) {
+        getPermissionSets({
+            userId: userId
+        }).then(result => {
+            let permissionSetURL, permissionSetName;
+            const data = result.map(row => {
+                permissionSetURL = this.sfdcBaseURL + `/lightning/setup/PermSets/home`;
+                permissionSetName = row.PermissionSet.Label !== undefined ? row.PermissionSet.Label : "";
+                return {...row, permissionSetURL, permissionSetName};
+            });
+            this.userPermissionSetAssignments = [...data];
+        }).catch(error => {
+            this.error = error;
+            console.log("Error in Save call back:", this.error);
+            this.showToastMessage('Error Retrieving Permission Sets for User', '', "error");
+        });
+    }
+
+    handlePermSetAction(event) {
+        const actionName = event.detail.action.name;
+        const row = event.detail.row;
+        const permSetId = row.Id;
+        switch (actionName) {
+            case "Delete":
+                console.log("Delete");
+                this.handleDelete(permSetId, 'Deleted Permission Set Assignment');
+                break;
+            default:
+        }
+    }
+
+    handleDelete(recId, message) {
+        deletePermissionSetAssignment({recordId: recId}).then(result => {
+            this.getPermissionSetAssignments(this.confirmationUserId);
+            this.showToastMessage(message, '', 'success');
+        }).catch(error => {
+            console.log(JSON.stringify(error));
+            this.showToastMessage('Error deleting Permission Set Assignment', '', 'error');
+        })
+    }
+
+    hideManagePermissionSets() {
+        this.confirmationUserName = '';
+        this.confirmationUserId = '';
+        this.showManagePermissionSets = false;
+        this.showModal = false;
+    }
+
+    saveNewAssignment() {
+        const currentAssigneeId = this.confirmationUserId;
+        const currentPermissionSetId = this.currentSelectPermissionSet;
+        createPermissionSetAssignment({
+            userId: currentAssigneeId,
+            permissionSetId: currentPermissionSetId
+        }).then(result => {
+            console.log(JSON.stringify(result));
+            this.getPermissionSetAssignments(this.confirmationUserId);
+            this.showToastMessage('Successfully Created New Assignment', '', 'success');
+            this.currentSelectPermissionSet = '';
+        }).catch(error => {
+            console.log(JSON.stringify(error));
+            this.showToastMessage('Error creating Permission Set Assignment', '', 'error');
+        })
+    }
+
+    resetNewAssignment() {
+        this.currentSelectPermissionSet = '';
+        console.log(this.currentSelectPermissionSet);
+    }
+
+    handlePermissionSetChange(event) {
+        console.log("handlePermissionSetChange");
+        const newValue = event.detail.value;
+        this.currentSelectPermissionSet = newValue;
+        console.log(this.currentSelectPermissionSet);
     }
 
     handleAddUserSubmit(event) {

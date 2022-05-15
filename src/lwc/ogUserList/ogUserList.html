@@ -228,13 +228,13 @@
                                                     aria-label="Reset Password" size="x-small"
                                                     title="Reset Password"></lightning-icon>
                                 </a>
-<!--                                <a key={item.key} data-userid={item.Id data-username={item.Name}-->
-<!--                                   onclick={managePermissionSets}>-->
-<!--                                    <lightning-icon icon-name="utility:restriction_policy"-->
-<!--                                                    alternative-text="Manage Permission Sets"-->
-<!--                                                    aria-label="Manage Permission Sets" size="x-small"-->
-<!--                                                    title="Manage Permission Sets"></lightning-icon>-->
-<!--                                </a>-->
+                                <a key={item.key} data-userid={item.Id} data-username={item.Name}
+                                   onclick={managePermissionSets}>
+                                    <lightning-icon icon-name="utility:restriction_policy"
+                                                    alternative-text="Manage Permission Sets"
+                                                    aria-label="Manage Permission Sets" size="x-small"
+                                                    title="Manage Permission Sets"></lightning-icon>
+                                </a>
                             </td>
                         </tr>
                     </template>
@@ -407,7 +407,73 @@
                     </lightning-card>
                 </template>
                 <template if:true={showManagePermissionSets}>
-
+                    <lightning-card title={confirmationTitle} icon-name={confirmationIcon}>
+                        <lightning-button
+                                slot="actions"
+                                variant="neutral"
+                                title="Close"
+                                label="Close"
+                                icon-name="utility:close"
+                                onclick={hideManagePermissionSets}
+                        ></lightning-button>
+                        <lightning-layout>
+                            <lightning-layout-item class="slds-size_2-of-3" padding="horizontal-small">
+                                <lightning-datatable class="permSetTable" key-field="id"
+                                                     data={userPermissionSetAssignments}
+                                                     columns={permissionSetAssignmentColumns} column-widths-mode="auto"
+                                                     onrowaction={handlePermSetAction} hide-checkbox-column="true">
+                                </lightning-datatable>
+                            </lightning-layout-item>
+                            <lightning-layout-item class="slds-size_1-of-3" padding="horizontal-small">
+                                <lightning-card>
+                                    <div slot="title">
+                                        <h3>
+                                            <lightning-icon icon-name="action:new"
+                                                            size="xx-small"></lightning-icon>
+                                            <span class="slds-m-left_small">New Assignment</span>
+                                        </h3>
+                                    </div>
+                                    <div class="slds-card__body_inner">
+                                        <lightning-combobox
+                                                name="permissionset"
+                                                label="Permission Set"
+                                                value={currentSelectPermissionSet}
+                                                placeholder="Select Permission Set"
+                                                options={permissionSetOptions}
+                                                onchange={handlePermissionSetChange}
+                                                validity=""
+                                                required
+                                        ></lightning-combobox>
+                                    </div>
+                                    <div class="slds-float_right slds-m-top_medium">
+                                        <lightning-button
+                                                class="slds-m-top_small"
+                                                variant="brand"
+                                                onclick={saveNewAssignment}
+                                                name="save"
+                                                label="Save"
+                                                disabled={canSaveAssignment}></lightning-button>
+                                        <lightning-button variant="neutral"
+                                                          onclick={resetNewAssignment}
+                                                          label="Cancel">
+                                        </lightning-button>
+                                    </div>
+                                </lightning-card>
+                            </lightning-layout-item>
+                        </lightning-layout>
+                        <div slot="footer">
+                            <lightning-button-group>
+                                <lightning-button
+                                        class="slds-float_right"
+                                        variant="neutral"
+                                        title="Close"
+                                        label="Close"
+                                        icon-name="utility:close"
+                                        onclick={hideManagePermissionSets}
+                                ></lightning-button>
+                            </lightning-button-group>
+                        </div>
+                    </lightning-card>
                 </template>
             </div>
         </section>
