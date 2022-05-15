@@ -6,6 +6,8 @@ import {api, LightningElement, track} from "lwc";
 import getUsers from "@salesforce/apex/ogUserListController.getUsers";
 import getOGUserListWrapper from "@salesforce/apex/ogUserListController.getOGUserListWrapper";
 import saveUsers from "@salesforce/apex/ogUserListController.saveUsers";
+import toggleFreezeUsers from "@salesforce/apex/ogUserListController.toggleFreezeUser";
+import resetUserPassword from "@salesforce/apex/ogUserListController.resetUserPassword";
 import currentUserId from "@salesforce/user/Id";
 import {ShowToastEvent} from "lightning/platformShowToastEvent";
 
@@ -20,10 +22,18 @@ export default class OgUserList extends LightningElement {
     @track hideSaveCancel = false;
     @track isUserEdited = false;
     @track saveIsDisabled = true;
+    @track showModal = false;
     @track showAddUser = false;
+    @track showFreezeResetConfirmation = false;
+    @track showManagePermissionSets = false;
     @track activeUsersVariant = "neutral";
     @track recordsToDisplay = [];
     @track currentSelectedProfile;
+    confirmationTitle = "";
+    confirmationIcon = "";
+    confirmationUserId = "";
+    confirmationUserName = "";
+    userAction = "";
     isLoading = false;
     recordsperpage = "10";
     totalRecords;
@@ -235,10 +245,12 @@ export default class OgUserList extends LightningElement {
 
     addUser() {
         console.log("addUser");
+        this.showModal = true;
         this.showAddUser = true;
     }
 
     closeAddUser() {
+        this.showModal = false;
         this.showAddUser = false;
     }
 
@@ -252,7 +264,66 @@ export default class OgUserList extends LightningElement {
         this.saveIsDisabled = false;
     }
 
-    freezeUser() {
+    showConfirmation() {
+        this.showModal = true;
+        this.showFreezeResetConfirmation = true;
+    }
+
+    hideConfirmation() {
+        this.showModal = false;
+        this.showFreezeResetConfirmation = false;
+        this.clearUserAction();
+    }
+
+    freezeUser(event) {
+        this.confirmationUserName = event.currentTarget.dataset.username;
+        this.confirmationUserId = event.currentTarget.dataset.userid;
+        this.confirmationIcon = 'utility:frozen';
+        this.confirmationTitle = 'Confirm that you want to freeze ' + this.confirmationUserName;
+        this.userAction = 'freeze';
+        this.showConfirmation();
+    }
+
+    resetPassword(event) {
+        this.confirmationUserName = event.currentTarget.dataset.username;
+        this.confirmationUserId = event.currentTarget.dataset.userid;
+        this.confirmationIcon = 'utility:reset_password';
+        this.confirmationTitle = 'Confirm that you want to reset the password for ' + this.confirmationUserName;
+        this.userAction = 'reset';
+        this.showConfirmation();
+    }
+
+    handleConfirmationAction() {
+        if (this.userAction === 'reset') {
+            resetUserPassword({
+                userId: this.confirmationUserId
+            }).then(result => {
+                console.log('successful reset');
+            }).catch(error => {
+                this.error = error;
+                console.log("Error in Save call back:", this.error);
+            });
+        } else if (this.userAction === 'freeze') {
+            toggleFreezeUsers({
+                userId: this.confirmationUserId
+            }).then(result => {
+                console.log('successful toggle freeze');
+            }).catch(error => {
+                this.error = error;
+                console.log("Error in Save call back:", this.error);
+            });
+        }
+        this.clearUserAction();
+        this.hideConfirmation();
+    }
+
+    clearUserAction() {
+        this.confirmationUserId = '';
+        this.confirmationUserName = '';
+        this.userAction = '';
+    }
+
+    managePermissionSets() {
 
     }
 
@@ -266,7 +337,7 @@ export default class OgUserList extends LightningElement {
         console.log("handleAddUserSuccess");
         const message = "Record ID: " + event.detail.Id;
         this.showToastMessage("User Created", message, "success");
-        this.showAddUser = false;
+        this.closeAddUser();
         this.handleReset(event);
     }
 

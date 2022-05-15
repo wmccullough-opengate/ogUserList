@@ -49,6 +49,37 @@ public with sharing class ogUserListController {
         }
         return message;
     }
+    @AuraEnabled(Cacheable=true)
+    public static List<PermissionSetAssignment> getPermissionSetsForUser(String userId) {
+        List<PermissionSetAssignment> permissionSetAssignments = new List<PermissionSetAssignment>();
+        if (String.isEmpty(userId)) {
+            return permissionSetAssignments;
+        }
+        permissionSetAssignments = [
+                SELECT Id, AssigneeId, PermissionSetId, PermissionSet.Name
+                FROM PermissionSetAssignment
+                WHERE AssigneeId = :userId
+        ];
+        return permissionSetAssignments;
+    }
+    @AuraEnabled
+    public static void resetUserPassword(String userId) {
+        if (String.isEmpty(userId)) {
+            return;
+        }
+        Id id = Id.valueOf(userId);
+        System.resetPassword(id, true);
+    }
+    @AuraEnabled
+    public static void toggleFreezeUser(String userId) {
+        if (String.isEmpty(userId)) {
+            return;
+        }
+        Id id = Id.valueOf(userId);
+        UserLogin userLogin = [SELECT Id, IsFrozen, UserId FROM UserLogin WHERE UserId = :id];
+        userLogin.IsFrozen = !userLogin.IsFrozen;
+        update userLogin;
+    }
     private static String getCurrentOrgId() {
         return String.valueOf(UserInfo.getOrganizationId()).substring(0, 15);
     }

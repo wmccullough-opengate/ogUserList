@@ -95,7 +95,8 @@ private class ogUserListControllerTest {
         User verifyUser = [SELECT Id, Name, FirstName FROM User WHERE LastName = 'StandardUser09178'];
         System.debug(verifyUser);
         System.assert(verifyUser.FirstName == 'Test', 'The StandardUser\'s FirstName should be "Test"');
-    } @IsTest
+    }
+    @IsTest
     static void savingUsersShouldReturnErrorMessage() {
         User standardUser = [SELECT Id, Name FROM User WHERE LastName = 'StandardUser09178'];
         Test.startTest();
@@ -107,6 +108,24 @@ private class ogUserListControllerTest {
             String message = ogUserListController.saveUsers(users);
             System.debug(message);
             System.assert(message.startsWith('Error'));
+        }
+        Test.stopTest();
+    }
+    @IsTest
+    static void passwordResetShouldReset() {
+        User standardUser = [SELECT Id, Name FROM User WHERE LastName = 'StandardUser09178'];
+        Test.startTest();
+        {
+            ogUserListController.resetUserPassword(String.valueOf(standardUser.Id));
+        }
+        Test.stopTest();
+    }
+    @IsTest
+    static void toggleFreezeShouldToggle() {
+        User standardUser = [SELECT Id, Name FROM User WHERE LastName = 'StandardUser09178'];
+        Test.startTest();
+        {
+            ogUserListController.toggleFreezeUser(String.valueOf(standardUser.Id));
         }
         Test.stopTest();
     }

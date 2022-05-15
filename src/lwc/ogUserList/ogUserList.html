@@ -206,16 +206,35 @@
                                 </div>
                             </td>
                             <td class="slds-size_1-of-12 slds-col" data-label="actions">
-                                <a key={item.key} data-userid={item.Id} onclick={copyUserId}>
+                                <a key={item.key} data-userid={item.Id} data-username={item.Name}
+                                   onclick={copyUserId}
+                                   class="slds-m-right_xx-small">
                                     <lightning-icon icon-name="utility:copy" aria-label="Copy Id"
                                                     alternative-text="Copy User Id to Clipboard" size="x-small"
+                                                    title="Copy UserId to Clipboard"
                                     ></lightning-icon>
                                 </a>
-                                <!--                                <a key={item.key} data-userid={item.Id} onclick={freezeUser}>-->
-                                <!--                                    <lightning-icon icon-name="utility:frozen" alternative-text="freeze"-->
-                                <!--                                                    aria-label="Freeze User" size="x-small"-->
-                                <!--                                                    variant="success"></lightning-icon>-->
-                                <!--                                </a>-->
+                                <a key={item.key} data-userid={item.Id} data-username={item.Name}
+                                   onclick={freezeUser}
+                                   class="slds-m-right_xx-small">
+                                    <lightning-icon icon-name="utility:frozen" alternative-text="Freeze User"
+                                                    aria-label="Freeze User" size="x-small"
+                                                    title="Freeze User"></lightning-icon>
+                                </a>
+                                <a key={item.key} data-userid={item.Id} data-username={item.Name}
+                                   onclick={resetPassword}
+                                   class="slds-m-right_xx-small">
+                                    <lightning-icon icon-name="utility:reset_password" alternative-text="Reset Password"
+                                                    aria-label="Reset Password" size="x-small"
+                                                    title="Reset Password"></lightning-icon>
+                                </a>
+<!--                                <a key={item.key} data-userid={item.Id data-username={item.Name}-->
+<!--                                   onclick={managePermissionSets}>-->
+<!--                                    <lightning-icon icon-name="utility:restriction_policy"-->
+<!--                                                    alternative-text="Manage Permission Sets"-->
+<!--                                                    aria-label="Manage Permission Sets" size="x-small"-->
+<!--                                                    title="Manage Permission Sets"></lightning-icon>-->
+<!--                                </a>-->
                             </td>
                         </tr>
                     </template>
@@ -283,77 +302,113 @@
             </div>
         </lightning-card>
     </div>
-    <template if:true={showAddUser}>
+    <template if:true={showModal}>
         <!-- Modal/Popup Box LWC starts here -->
         <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
                  aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
             <div class="slds-modal__container">
-                <lightning-record-edit-form record-id={recordId} object-api-name="User"
-                                            onsuccess={handleAddUserSuccess} onsubmit={handleAddUserSubmit}>
-                    <!-- Modal/Popup Box LWC header here -->
-                    <header class="slds-modal__header">
-                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
-                                title="Close" onclick={closeAddUser}>
-                            <lightning-icon icon-name="utility:close"
-                                            alternative-text="close"
-                                            variant="inverse"
-                                            size="small"></lightning-icon>
-                            <span class="slds-assistive-text">Close</span>
-                        </button>
-                        <h1 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Add User</h1>
-                    </header>
-                    <!-- Modal/Popup Box LWC body starts here -->
-                    <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
-                        <div>
-                            <lightning-messages>
-                            </lightning-messages>
-                            <lightning-layout>
-                                <lightning-layout-item class="slds-size_1-of-2">
-                                    <lightning-input-field field-name="FirstName">
-                                    </lightning-input-field>
-                                    <lightning-input-field field-name="LastName">
-                                    </lightning-input-field>
-                                    <lightning-input-field field-name="Email">
-                                    </lightning-input-field>
-                                    <lightning-input-field field-name="Alias">
-                                    </lightning-input-field>
-                                    <lightning-input-field field-name="CommunityNickname">
-                                    </lightning-input-field>
-                                    <lightning-input-field field-name="Username">
-                                    </lightning-input-field>
-                                    <lightning-input-field field-name="FederationIdentifier">
-                                    </lightning-input-field>
-                                </lightning-layout-item>
-                                <lightning-layout-item class="slds-size_1-of-2">
-                                    <lightning-input-field field-name="EmailEncodingKey">
-                                    </lightning-input-field>
-                                    <lightning-input-field field-name="LanguageLocaleKey">
-                                    </lightning-input-field>
-                                    <lightning-input-field field-name="LocaleSidKey">
-                                    </lightning-input-field>
-                                    <lightning-input-field field-name="UserRoleId">
-                                    </lightning-input-field>
-                                    <lightning-input-field field-name="ProfileId">
-                                    </lightning-input-field>
-                                    <lightning-input-field field-name="TimeZoneSidKey">
-                                    </lightning-input-field>
-                                    <lightning-input-field field-name="ManagerId">
-                                    </lightning-input-field>
-                                </lightning-layout-item>
-                            </lightning-layout>
+                <template if:true={showAddUser}>
+                    <lightning-record-edit-form record-id={recordId} object-api-name="User"
+                                                onsuccess={handleAddUserSuccess} onsubmit={handleAddUserSubmit}>
+                        <!-- Modal/Popup Box LWC header here -->
+                        <header class="slds-modal__header">
+                            <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                                    title="Close" onclick={closeAddUser}>
+                                <lightning-icon icon-name="utility:close"
+                                                alternative-text="close"
+                                                variant="inverse"
+                                                size="small"></lightning-icon>
+                                <span class="slds-assistive-text">Close</span>
+                            </button>
+                            <h1 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Add User</h1>
+                        </header>
+                        <!-- Modal/Popup Box LWC body starts here -->
+                        <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                            <div>
+                                <lightning-messages>
+                                </lightning-messages>
+                                <lightning-layout>
+                                    <lightning-layout-item class="slds-size_1-of-2">
+                                        <lightning-input-field field-name="FirstName">
+                                        </lightning-input-field>
+                                        <lightning-input-field field-name="LastName">
+                                        </lightning-input-field>
+                                        <lightning-input-field field-name="Email">
+                                        </lightning-input-field>
+                                        <lightning-input-field field-name="Alias">
+                                        </lightning-input-field>
+                                        <lightning-input-field field-name="CommunityNickname">
+                                        </lightning-input-field>
+                                        <lightning-input-field field-name="Username">
+                                        </lightning-input-field>
+                                        <lightning-input-field field-name="FederationIdentifier">
+                                        </lightning-input-field>
+                                    </lightning-layout-item>
+                                    <lightning-layout-item class="slds-size_1-of-2">
+                                        <lightning-input-field field-name="EmailEncodingKey">
+                                        </lightning-input-field>
+                                        <lightning-input-field field-name="LanguageLocaleKey">
+                                        </lightning-input-field>
+                                        <lightning-input-field field-name="LocaleSidKey">
+                                        </lightning-input-field>
+                                        <lightning-input-field field-name="UserRoleId">
+                                        </lightning-input-field>
+                                        <lightning-input-field field-name="ProfileId">
+                                        </lightning-input-field>
+                                        <lightning-input-field field-name="TimeZoneSidKey">
+                                        </lightning-input-field>
+                                        <lightning-input-field field-name="ManagerId">
+                                        </lightning-input-field>
+                                    </lightning-layout-item>
+                                </lightning-layout>
+                            </div>
                         </div>
-                    </div>
-                    <!-- Modal/Popup Box LWC footer starts here -->
-                    <footer class="slds-modal__footer">
-                        <lightning-button class="slds-m-top_small" variant="neutral" title="Cancel"
-                                          onclick={closeAddUser}
-                                          label="Cancel">
-                        </lightning-button>
-                        <lightning-button class="slds-m-top_small" variant="brand" type="submit" name="update"
-                                          label="Add User">
-                        </lightning-button>
-                    </footer>
-                </lightning-record-edit-form>
+                        <!-- Modal/Popup Box LWC footer starts here -->
+                        <footer class="slds-modal__footer">
+                            <lightning-button class="slds-m-top_small" variant="neutral" title="Cancel"
+                                              onclick={closeAddUser}
+                                              label="Cancel">
+                            </lightning-button>
+                            <lightning-button class="slds-m-top_small" variant="brand" type="submit" name="update"
+                                              label="Add User">
+                            </lightning-button>
+                        </footer>
+                    </lightning-record-edit-form>
+                </template>
+                <template if:true={showFreezeResetConfirmation}>
+                    <lightning-card title={confirmationTitle} icon-name={confirmationIcon}>
+                        <lightning-button
+                                slot="actions"
+                                variant="neutral"
+                                title="Cancel"
+                                label="Cancel"
+                                icon-name="utility:close"
+                                onclick={hideConfirmation}
+                        ></lightning-button>
+                        <div slot="footer">
+                            <lightning-button-group>
+                                <lightning-button
+                                        variant="brand"
+                                        title="Confirm"
+                                        label="Confirm"
+                                        icon-name="utility:check"
+                                        onclick={handleConfirmationAction}
+                                        class="slds-m-right_x-small"
+                                ></lightning-button>
+                                <lightning-button
+                                        variant="neutral"
+                                        title="Cancel"
+                                        label="Cancel"
+                                        icon-name="utility:close"
+                                        onclick={hideConfirmation}
+                                ></lightning-button>
+                            </lightning-button-group>
+                        </div>
+                    </lightning-card>
+                </template>
+                <template if:true={showManagePermissionSets}>
+
+                </template>
             </div>
         </section>
         <div class="slds-backdrop slds-backdrop_open"></div>
