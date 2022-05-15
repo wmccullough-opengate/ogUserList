@@ -8,7 +8,6 @@ import getOGUserListWrapper from "@salesforce/apex/ogUserListController.getOGUse
 import saveUsers from "@salesforce/apex/ogUserListController.saveUsers";
 import toggleFreezeUsers from "@salesforce/apex/ogUserListController.toggleFreezeUser";
 import resetUserPassword from "@salesforce/apex/ogUserListController.resetUserPassword";
-import currentUserId from "@salesforce/user/Id";
 import {ShowToastEvent} from "lightning/platformShowToastEvent";
 
 
@@ -47,7 +46,6 @@ export default class OgUserList extends LightningElement {
     recordId;
     currentOrgId;
     loginNonce;
-    lookupQueryLimit = 10;
     sfdcBaseURL;
     sfdcBaseURLEncode;
     sortedDirection = "asc";
@@ -55,16 +53,13 @@ export default class OgUserList extends LightningElement {
     error;
     timerId;
 
+
     get title() {
         return "Manage Users (Today is: " + this.today + ")";
     }
 
     get today() {
         return new Date().toLocaleDateString();
-    }
-
-    get adminUserId() {
-        return currentUserId.substring(0, 14);
     }
 
     get pageNumberOf() {
@@ -185,22 +180,6 @@ export default class OgUserList extends LightningElement {
         this.getListUsers(this.searchTerm);
     }
 
-    handleSelection(event) {
-        console.log("handleSelection");
-        event.stopPropagation();
-        //unique-key passed in input is coming as key here
-        //By passing ApiName of the field, we can make this function
-        //dynamic for multiple lookups on a single screen
-        let fieldName = event.detail.data.key;
-        // console.log(fieldName);
-        //selected id passed by lookup component
-        let selectedId = event.detail.data.selectedId;
-        // this.objectInfo[fieldName] = selectedId;
-        // const fieldSelector = "lightning-input-field[data-id=" + fieldName + "]";
-        // this.template.querySelector(fieldSelector).value = selectedId;
-        // console.log(this.template.querySelector(fieldSelector));
-    }
-
     handleComboBoxChange(event) {
         console.log("handleComboBoxChange");
         const fieldName = event.target.dataset.fieldname;
@@ -294,11 +273,14 @@ export default class OgUserList extends LightningElement {
     }
 
     handleConfirmationAction() {
+        const userName = this.confirmationUserName.toString();
         if (this.userAction === 'reset') {
             resetUserPassword({
                 userId: this.confirmationUserId
             }).then(result => {
                 console.log('successful reset');
+                const messageTitle = 'Password successfully reset for ' + userName;
+                this.showToastMessage("Successful Password Reset", messageTitle, "success");
             }).catch(error => {
                 this.error = error;
                 console.log("Error in Save call back:", this.error);
@@ -308,6 +290,8 @@ export default class OgUserList extends LightningElement {
                 userId: this.confirmationUserId
             }).then(result => {
                 console.log('successful toggle freeze');
+                const messageTitle = 'Freeze User completed for ' + userName;
+                this.showToastMessage('Successfully Froze User', messageTitle, "success");
             }).catch(error => {
                 this.error = error;
                 console.log("Error in Save call back:", this.error);

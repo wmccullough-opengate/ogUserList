@@ -55,7 +55,7 @@
                         <lightning-combobox title="Profile" options={profileOptions} name="ProfileFilter"
                                             placeholder="Select a Profile" onchange={handleProfileSelection}
                                             value={currentSelectedProfile}
-                                            variant="label-hidden"></lightning-combobox>
+                                            variant="label-hidden" validity=""></lightning-combobox>
                     </lightning-layout-item>
                     <lightning-layout-item padding="horizontal-small">
                         <lightning-button label="Active Users"
@@ -163,7 +163,7 @@
                                                             placeholder="Select a Profile"
                                                             onchange={handleComboBoxChange}
                                                             value={item.ProfileId}
-                                                            variant="label-hidden"></lightning-combobox>
+                                                            variant="label-hidden" validity=""></lightning-combobox>
                                     </template>
                                 </div>
                             </td>
@@ -179,7 +179,7 @@
                                                             placeholder="Select a Role"
                                                             onchange={handleComboBoxChange}
                                                             value={item.UserRoleId}
-                                                            variant="label-hidden"></lightning-combobox>
+                                                            variant="label-hidden" validity=""></lightning-combobox>
                                     </template>
                                 </div>
                             </td>
