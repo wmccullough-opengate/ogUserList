@@ -18,7 +18,7 @@ Includes a Lightning Tab called 'Manage Users'. Give yourself access to this tab
 6) Clear (reset) Filters.
 7) Login As row button.
 8) Click column headings to sort by that column.
-9) Actions column - currently supports copying the User Id, freezing the user, reset password for user.
+9) Actions column - supports copying the User Id, freezing the user, and resetting the password for user.
 10) Pagination - shows 10 rows at a time with First/Previous/Next/Last buttons
 11) Download button to export currently filtered list of users.
 12) Double-Click table to edit any row. Supports editing of Profile, Role, and IsActive.
