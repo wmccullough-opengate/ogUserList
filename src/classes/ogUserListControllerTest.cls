@@ -153,6 +153,7 @@ private class ogUserListControllerTest {
                 SELECT Id
                 FROM PermissionSetAssignment
                 WHERE AssigneeId = :standardUser.Id
+                AND PermissionSet.Label = 'testPermission1'
                 LIMIT 1
         ];
         PermissionSetAssignment permissionSetAssignment = (permissionSetAssignments.size() == 1) ? permissionSetAssignments.get(0) : null;
