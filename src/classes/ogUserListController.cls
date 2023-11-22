@@ -23,6 +23,7 @@ public with sharing class ogUserListController {
         String whereClause = '';
         if (String.isNotEmpty(searchTerm) || activeOnly || String.isNotEmpty(selectedProfileId)) {
             if (String.isNotEmpty(searchTerm)) {
+                String nameSearch = '%' + String.escapeSingleQuotes(searchTerm) + '%';
                 whereClause += ' Name LIKE :nameSearch';
             }
             if (activeOnly) {
