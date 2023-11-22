@@ -11,6 +11,9 @@ import resetUserPassword from "@salesforce/apex/ogUserListController.resetUserPa
 import getPermissionSets from "@salesforce/apex/ogUserListController.getPermissionSetsForUser";
 import deletePermissionSetAssignment from "@salesforce/apex/ogUserListController.deletePermissionSetAssignment";
 import createPermissionSetAssignment from "@salesforce/apex/ogUserListController.saveNewPermissionSetAssignment";
+import getGroups from "@salesforce/apex/ogUserListController.getGroupsForUser";
+import deleteGroupMember from "@salesforce/apex/ogUserListController.deleteGroupMember";
+import createGroupMember from "@salesforce/apex/ogUserListController.saveNewGroupMember";
 import {ShowToastEvent} from "lightning/platformShowToastEvent";
 
 
@@ -18,10 +21,12 @@ export default class OgUserList extends LightningElement {
     @api searchTerm;
     @track users = [];
     @track userPermissionSetAssignments = [];
+    @track userGroupMemberAssignments = [];
     @track wrapper = [];
     @track profileOptions = [];
     @track roleOptions = [];
     @track permissionSetOptions = [];
+    @track groupOptions = [];
     @track isPartnerEdited = false;
     @track hideSaveCancel = false;
     @track isUserEdited = false;
@@ -36,6 +41,7 @@ export default class OgUserList extends LightningElement {
     @track recordsToDisplay = [];
     @track currentSelectedProfile;
     @track currentSelectPermissionSet;
+    @track currentSelectGroup;
     confirmationTitle = "";
     confirmationIcon = "";
     confirmationUserId = "";
@@ -333,6 +339,47 @@ export default class OgUserList extends LightningElement {
         this.userAction = '';
     }
 
+    manageGroups(event) {
+        const rowUserId = event.currentTarget.dataset.userid;
+        this.confirmationUserName = event.currentTarget.dataset.username;
+        this.confirmationUserId = rowUserId;
+        this.confirmationIcon = 'utility:groups';
+        this.confirmationTitle = 'Manage Groups for ' + this.confirmationUserName;
+        this.getGroupMembers(rowUserId);
+    }
+
+    getGroupMembers(userId) {
+        getGroups(
+            {
+                userId: userId
+            }).then(result => {
+            const currentGroupMembers = result.currentGroupMembers;
+            const potentialGroups = result.potentialGroups;
+            let permissionSetURL, permissionSetName;
+            const data = currentGroupMembers.map(row => {
+                permissionSetURL = this.sfdcBaseURL + `/lightning/setup/PublicGroups/page?address=%2Fsetup%2Fown%2Fgroupdetail.jsp%3Fid%3D` + row.GroupId;
+                permissionSetName = row.Group.Name !== undefined ? row.Group.Name : row.Group.DeveloperName;
+                return {...row, permissionSetURL, permissionSetName};
+            });
+            this.userGroupMemberAssignments = [...data];
+            this.groupOptions = [];
+            this.groupOptions = [...this.groupOptions, {value: "", label: ""}];
+            for (let i = 0; i < potentialGroups.length; i++) {
+                this.groupOptions = [...this.groupOptions, {
+                    value: potentialGroups[i].Id,
+                    label: potentialGroups[i].Name === null ? potentialGroups[i].DeveloperName : potentialGroups[i].Name
+                }];
+            }
+        }).catch(error => {
+            this.error = error;
+            console.log("Error in getting Group Members:", this.error);
+            this.showToastMessage('Error Retrieving Group Members for User', '', "error");
+        }).finally(() => {
+            this.showModal = true;
+            this.showManageGroups = true;
+        });
+    }
+
     managePermissionSets(event) {
         const rowUserId = event.currentTarget.dataset.userid;
         this.confirmationUserName = event.currentTarget.dataset.username;
@@ -343,15 +390,6 @@ export default class OgUserList extends LightningElement {
         this.getPermissionSetAssignments(rowUserId);
     }
 
-    manageGroups(event) {
-        this.confirmationUserName = event.currentTarget.dataset.username;
-        this.confirmationUserId = event.currentTarget.dataset.userid;
-        this.confirmationIcon = 'utility:groups';
-        this.confirmationTitle = 'Manage Groups for ' + this.confirmationUserName;
-        this.showModal = true;
-        this.showManageGroups = true;
-        // this.getGroups(rowUserId);
-    }
 
     getPermissionSetAssignments(userId) {
         getPermissionSets({
@@ -366,6 +404,7 @@ export default class OgUserList extends LightningElement {
                 return {...row, permissionSetURL, permissionSetName};
             });
             this.userPermissionSetAssignments = [...data];
+            this.permissionSetOptions = [];
             this.permissionSetOptions = [...this.permissionSetOptions, {value: "", label: ""}];
             for (let i = 0; i < potentialPermSetAssignemnts.length; i++) {
                 this.permissionSetOptions = [...this.permissionSetOptions, {
@@ -394,6 +433,18 @@ export default class OgUserList extends LightningElement {
         }
     }
 
+    handleGroupMemberAction(event) {
+        const actionName = event.detail.action.name;
+        const row = event.detail.row;
+        const groupMemberId = row.Id;
+        switch (actionName) {
+            case "Delete":
+                this.handleDeleteGroupMember(groupMemberId, 'Deleted Group Member');
+                break;
+            default:
+        }
+    }
+
     handleDelete(recId, message) {
         deletePermissionSetAssignment({recordId: recId}).then(() => {
             this.getPermissionSetAssignments(this.confirmationUserId);
@@ -404,13 +455,25 @@ export default class OgUserList extends LightningElement {
         })
     }
 
+    handleDeleteGroupMember(recId, message) {
+        deleteGroupMember({recordId: recId}).then(() => {
+            this.getGroupMembers(this.confirmationUserId);
+            this.showToastMessage(message, '', 'success');
+        }).catch(error => {
+            console.log(JSON.stringify(error));
+            this.showToastMessage('Error deleting Group Member', '', 'error');
+        })
+    }
+
     hideManagePermissionSets() {
         this.showManagePermissionSets = false;
+        this.currentSelectPermissionSet = '';
         this.closeModal();
     }
 
     hideManageGroups() {
         this.showManageGroups = false;
+        this.currentSelectGroup = '';
         this.closeModal();
     }
 
@@ -436,12 +499,36 @@ export default class OgUserList extends LightningElement {
         })
     }
 
+    saveNewGroupMember() {
+        const currentUserId = this.confirmationUserId;
+        const currentGroupId = this.currentSelectGroup;
+        createGroupMember({
+            userId: currentUserId,
+            groupId: currentGroupId
+        }).then(() => {
+            this.getGroupMembers(currentUserId);
+            this.showToastMessage('Successfully Created New Group Member', '', 'success');
+            this.resetNewGroupMember();
+        }).catch(error => {
+            console.log(JSON.stringify(error));
+            this.showToastMessage('Error Creating New Group Member', '', 'error');
+        })
+    }
+
+    resetNewGroupMember() {
+        this.currentSelectGroup = '';
+    }
+
     resetNewAssignment() {
         this.currentSelectPermissionSet = '';
     }
 
     handlePermissionSetChange(event) {
         this.currentSelectPermissionSet = event.detail.value;
+    }
+
+    handleGroupChange(event) {
+        this.currentSelectGroup = event.detail.value;
     }
 
     handleAddUserSubmit() {

@@ -13,5 +13,9 @@
         <members>ogUserList</members>
         <name>LightningComponentBundle</name>
     </types>
-    <version>51.0</version>
+    <types>
+        <members>ogUserList</members>
+        <name>PermissionSet</name>
+    </types>
+    <version>59.0</version>
 </Package>

@@ -7,9 +7,11 @@
 
 A LWC that is searchable, filterable, and sortable. Supports easy search and login as a user.
 
-Includes a Lightning Tab called 'Manage Users'. Give yourself access to this tab to begin using the component.  You can add the tab to an app or create a shortcut to it.
+Includes a Permission Set 'ogUserList'. Give yourself access to this permission set to begin using the component.
+You can add the tab 'Manage Users' to an app or create a shortcut to it.
 
 # Supported Features:
+
 1) Search by name as you type.
 2) Add User using minimal modal record edit form.
 3) Clear Search button.
@@ -18,7 +20,9 @@ Includes a Lightning Tab called 'Manage Users'. Give yourself access to this tab
 6) Clear (reset) Filters.
 7) Login As row button.
 8) Click column headings to sort by that column.
-9) Actions column - supports copying the User Id, freezing the user, resetting the password for user, and managing user permission set assignments.
-10) Pagination - shows 10 rows at a time with First/Previous/Next/Last buttons
-11) Download button to export currently filtered list of users.
-12) Double-Click table to edit any row. Supports editing of Profile, Role, and IsActive.
+9) Edit table button.
+10) Actions column - supports copying the User Id, freezing the user, resetting the password for user, managing user
+    permission set assignments, and managing group members.
+11) Pagination - shows 10 rows at a time with First/Previous/Next/Last buttons
+12) Download button to export currently filtered list of users.
+13) Double-Click table to edit any row. Supports editing of Profile, Role, and IsActive.

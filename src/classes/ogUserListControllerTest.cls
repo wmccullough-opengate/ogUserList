@@ -6,6 +6,12 @@
 private class ogUserListControllerTest {
     @TestSetup
     static void setupOGUserListControllerTestData() {
+        Group testGroup = new Group(
+                Name = 'Test Group',
+                DeveloperName = 'Test_Group',
+                Type = 'Regular'
+        );
+        insert testGroup;
         Profile profile = [SELECT Id FROM Profile WHERE Name = 'Standard User'];
         User standardUser = new User(Alias = 'standt', Email = 'standarduser@testorg.com',
                 EmailEncodingKey = 'UTF-8', LastName = 'StandardUser09178', LanguageLocaleKey = 'en_US',
@@ -33,6 +39,11 @@ private class ogUserListControllerTest {
                 LocaleSidKey = 'en_US', ProfileId = sysAdminProfile.Id,
                 TimeZoneSidKey = 'America/New_York', Username = 'sysadminuser' + getRandomNumberString() + '@testorg.com');
         insert sysAdminUser;
+        GroupMember testGroupMember = new GroupMember(
+                UserOrGroupId = standardUser.Id,
+                GroupId = testGroup.Id
+        );
+        insert testGroupMember;
     }
     @IsTest
     static void getOGUserListWrapperShouldReturnResults() {
@@ -125,7 +136,6 @@ private class ogUserListControllerTest {
         }
         Test.stopTest();
     }
-
     @IsTest
     static void getPermissionSetAssignmentShouldReturn() {
         User standardUser = [SELECT Id, Name FROM User WHERE LastName = 'StandardUser09178'];
@@ -160,6 +170,60 @@ private class ogUserListControllerTest {
         Test.startTest();
         {
             ogUserListController.deletePermissionSetAssignment(String.valueOf(permissionSetAssignment.Id));
+        }
+        Test.stopTest();
+    }
+    @IsTest
+    static void shouldGetGroupWrapper() {
+        User standardUser = [SELECT Id, Name FROM User WHERE LastName = 'StandardUser09178'];
+        Test.startTest();
+        {
+            ogUserListController.ogUserListGroupWrapper ogUserListGroupWrapper = ogUserListController.getGroupsForUser(String.valueOf(standardUser.Id));
+            Assert.isTrue(ogUserListGroupWrapper.currentGroupMembers.size() == 1);
+            Assert.isTrue(ogUserListGroupWrapper.potentialGroups.size() > 0);
+        }
+        Test.stopTest();
+    }
+    @IsTest
+    static void savingNewGroupMemberShouldWork() {
+        User standardUser = [SELECT Id, Name FROM User WHERE LastName = 'StandardUser09178'];
+        Group testGroup = [SELECT Id FROM Group WHERE Name = 'Test Group'];
+        Test.startTest();
+        {
+            ogUserListController.saveNewGroupMember(String.valueOf(standardUser.Id), String.valueOf(testGroup.Id));
+        }
+        Test.stopTest();
+        List<GroupMember> verifyMembers = [
+                SELECT Id, GroupId, UserOrGroupId
+                FROM GroupMember
+                WHERE UserOrGroupId = :standardUser.Id
+        ];
+        System.debug(verifyMembers);
+    }
+    @IsTest
+    static void deletingGroupMemberShouldWork() {
+        User standardUser = [SELECT Id, Name FROM User WHERE LastName = 'StandardUser09178'];
+        List<GroupMember> groupMembers = [
+                SELECT Id
+                FROM GroupMember
+                WHERE UserOrGroupId = :standardUser.Id
+                AND Group.Name = 'Test Group'
+                LIMIT 1
+        ];
+        GroupMember currentGroupMember = (groupMembers.size() == 1) ? groupMembers.get(0) : null;
+        Test.startTest();
+        {
+            ogUserListController.deleteGroupMember(String.valueOf(currentGroupMember.Id));
+        }
+        Test.stopTest();
+    }
+    @IsTest
+    static void shouldReturnEmptyGroupWrapper() {
+        Test.startTest();
+        {
+            ogUserListController.ogUserListGroupWrapper ogUserListGroupWrapper = ogUserListController.getGroupsForUser(String.valueOf(''));
+            Assert.isTrue(ogUserListGroupWrapper.currentGroupMembers.size() == 0);
+            Assert.isTrue(ogUserListGroupWrapper.potentialGroups.size() == 0);
         }
         Test.stopTest();
     }

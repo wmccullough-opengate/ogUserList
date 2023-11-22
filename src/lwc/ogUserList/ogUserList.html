@@ -508,10 +508,10 @@
                         ></lightning-button>
                         <lightning-layout>
                             <lightning-layout-item class="slds-size_2-of-3" padding="horizontal-small">
-                                <lightning-datatable class="permSetTable" key-field="id"
-                                                     data={userPermissionSetAssignments}
+                                <lightning-datatable lwc:ref="groupMemberTable" key-field="id"
+                                                     data={userGroupMemberAssignments}
                                                      columns={permissionSetAssignmentColumns} column-widths-mode="auto"
-                                                     onrowaction={handlePermSetAction} hide-checkbox-column="true">
+                                                     onrowaction={handleGroupMemberAction} hide-checkbox-column="true">
                                 </lightning-datatable>
                             </lightning-layout-item>
                             <lightning-layout-item class="slds-size_1-of-3" padding="horizontal-small">
@@ -525,12 +525,12 @@
                                     </div>
                                     <div class="slds-card__body_inner">
                                         <lightning-combobox
-                                                name="permissionset"
-                                                label="Permission Set"
-                                                value={currentSelectPermissionSet}
-                                                placeholder="Select Permission Set"
-                                                options={permissionSetOptions}
-                                                onchange={handlePermissionSetChange}
+                                                name="groups"
+                                                label="Groups"
+                                                value={currentSelectGroup}
+                                                placeholder="Select Groups"
+                                                options={groupOptions}
+                                                onchange={handleGroupChange}
                                                 validity=""
                                                 required
                                         ></lightning-combobox>
@@ -539,12 +539,12 @@
                                         <lightning-button
                                                 class="slds-m-top_small"
                                                 variant="brand"
-                                                onclick={saveNewAssignment}
+                                                onclick={saveNewGroupMember}
                                                 name="save"
                                                 label="Save"
                                                 disabled={canSaveAssignment}></lightning-button>
                                         <lightning-button variant="neutral"
-                                                          onclick={resetNewAssignment}
+                                                          onclick={resetNewGroupMember}
                                                           label="Cancel">
                                         </lightning-button>
                                     </div>
