@@ -344,7 +344,6 @@ export default class OgUserList extends LightningElement {
     }
 
     manageGroups(event) {
-        const rowUserId = event.currentTarget.dataset.userid;
         this.confirmationUserName = event.currentTarget.dataset.username;
         this.confirmationUserId = event.currentTarget.dataset.userid;
         this.confirmationIcon = 'utility:groups';
