@@ -131,8 +131,8 @@ private class ogUserListControllerTest {
         User standardUser = [SELECT Id, Name FROM User WHERE LastName = 'StandardUser09178'];
         Test.startTest();
         {
-            List<PermissionSetAssignment> permissionSetAssignments = ogUserListController.getPermissionSetsForUser(String.valueOf(standardUser.Id));
-            System.assert(permissionSetAssignments.size() > 0);
+            ogUserListController.ogUserListPermissionSetWrapper ogUserListPermissionSetWrapper = ogUserListController.getPermissionSetsForUser(String.valueOf(standardUser.Id));
+            System.assert(ogUserListPermissionSetWrapper.currentPermissionSetAssignments.size() > 0);
         }
         Test.stopTest();
     }

@@ -51,10 +51,11 @@ public with sharing class ogUserListController {
         return message;
     }
     @AuraEnabled(Cacheable=false)
-    public static List<PermissionSetAssignment> getPermissionSetsForUser(String userId) {
+    public static ogUserListPermissionSetWrapper getPermissionSetsForUser(String userId) {
+        ogUserListPermissionSetWrapper ogUserListPermissionSets = new ogUserListPermissionSetWrapper();
         List<PermissionSetAssignment> permissionSetAssignments = new List<PermissionSetAssignment>();
         if (String.isEmpty(userId)) {
-            return permissionSetAssignments;
+            return ogUserListPermissionSets;
         }
         permissionSetAssignments = [
                 SELECT Id, AssigneeId, PermissionSetId, PermissionSet.Name, SystemModstamp, PermissionSet.Label
@@ -63,7 +64,23 @@ public with sharing class ogUserListController {
                 AND (NOT PermissionSet.Name LIKE 'X%')
                 ORDER BY PermissionSet.Label
         ];
-        return permissionSetAssignments;
+        List<PermissionSet> permissionSets = [
+                SELECT Id, Label
+                FROM PermissionSet
+                WHERE (NOT Label LIKE '00%')
+                AND Id NOT IN (
+                        SELECT PermissionSetId
+                        FROM PermissionSetAssignment
+                        WHERE AssigneeId = :userId
+                )
+                ORDER BY Label
+                LIMIT 400
+        ];
+        ogUserListPermissionSets.currentPermissionSetAssignments = permissionSetAssignments;
+        if (permissionSets != null && permissionSets.size() > 0) {
+            ogUserListPermissionSets.potentialPermissionSets = permissionSets;
+        }
+        return ogUserListPermissionSets;
     }
 
     @AuraEnabled
@@ -127,7 +144,7 @@ public with sharing class ogUserListController {
                 FROM PermissionSet
                 WHERE (NOT Label LIKE '00%')
                 ORDER BY Label
-                LIMIT 200
+                LIMIT 400
         ];
     }
     private static String generateRandomString(Integer len) {
@@ -150,5 +167,16 @@ public with sharing class ogUserListController {
         public List<UserRole> roles { get; set; }
         @AuraEnabled
         public List<PermissionSet> permissionSets { get; set; }
+    }
+    public class ogUserListPermissionSetWrapper {
+        @AuraEnabled
+        public List<PermissionSetAssignment> currentPermissionSetAssignments { get; set; }
+        @AuraEnabled
+        public List<PermissionSet> potentialPermissionSets { get; set; }
+
+        public ogUserListPermissionSetWrapper() {
+            this.currentPermissionSetAssignments = new List<PermissionSetAssignment>();
+            this.potentialPermissionSets = new List<PermissionSet>();
+        }
     }
 }

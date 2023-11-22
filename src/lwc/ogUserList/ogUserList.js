@@ -31,6 +31,7 @@ export default class OgUserList extends LightningElement {
     @track showAddUser = false;
     @track showFreezeResetConfirmation = false;
     @track showManagePermissionSets = false;
+    @track showManageGroups = false;
     @track activeUsersVariant = "neutral";
     @track recordsToDisplay = [];
     @track currentSelectedProfile;
@@ -105,11 +106,14 @@ export default class OgUserList extends LightningElement {
         return this.pageNo + " of " + this.totalPages;
     }
 
+    get editIsDisabled() {
+        return !this.saveIsDisabled;
+    }
+
     connectedCallback() {
         this.sfdcBaseURL = window.location.origin;
         this.sfdcBaseURLEncode = encodeURI(window.location.origin);
         getOGUserListWrapper().then(result => {
-            // console.log(JSON.stringify(result));
             if (result) {
                 this.currentOrgId = result[0].currentOrgId;
                 this.loginNonce = result[0].loginNonce;
@@ -122,11 +126,6 @@ export default class OgUserList extends LightningElement {
                 this.roleOptions = [...this.roleOptions, {value: "", label: ""}];
                 for (let i = 0; i < roles.length; i++) {
                     this.roleOptions = [...this.roleOptions, {value: roles[i].Id, label: roles[i].Name}];
-                }
-                const permissionSets = result[0].permissionSets;
-                this.permissionSetOptions = [...this.permissionSetOptions, {value: "", label: ""}];
-                for (let i = 0; i < permissionSets.length; i++) {
-                    this.permissionSetOptions = [...this.permissionSetOptions, {value: permissionSets[i].Id, label: permissionSets[i].Label}];
                 }
             }
         });
@@ -150,7 +149,6 @@ export default class OgUserList extends LightningElement {
             activeOnly: this.activeOnly,
             selectedProfileId: this.selectedProfileId
         }).then(result => {
-            // console.log(JSON.stringify(result));
             let nameURL, roleURL, roleName, profileURL, profileName, loginAs;
             this.users = result.map(row => {
                 nameURL = this.sfdcBaseURL + `/lightning/setup/ManageUsers/page?address=%2F${row.Id}%3Fnoredirect%3D1%26isUserEntityOverride%3D1`;
@@ -161,7 +159,6 @@ export default class OgUserList extends LightningElement {
                 loginAs = `/one/one.app#/alohaRedirect/servlet/servlet.su?oid=${this.currentOrgId}&suorgadminid=${row.Id}&targetURL=%2Fhome%2Fhome.jsp&amp;retURL=%2Flightning%2Fn%2FManage_Users%3FisUserEntityOverride%3D1%26retURL%3D%252Fsetup%252Fhome%26appLayout%3Dsetup%26tour%3D%26isdtp%3Dp1%26sfdcIFrameOrigin%3D${this.sfdcBaseURLEncode}%26sfdcIFrameHost%3Dweb%26nonce%3D${this.loginNonce}%26ltn_app_id%3D06m1t0000000fbwAAA%26clc%3D1&isdtp=p1`;
                 return {...row, nameURL, roleURL, roleName, profileURL, profileName, loginAs};
             });
-            // console.log("this.users----> ", this.users.length);
             this.totalRecords = this.users.length;
             this.setRecordsToDisplay();
             this.setFocusSearchField();
@@ -179,7 +176,7 @@ export default class OgUserList extends LightningElement {
         clearTimeout(this.timerId);
         this.timerId = window.setTimeout(() => {
             if (!this.searchTerm) {
-                this.errorMsg = "Please enter user name to search.";
+                // this.errorMsg = "Please enter user name to search.";
                 this.users = undefined;
                 return;
             }
@@ -201,11 +198,8 @@ export default class OgUserList extends LightningElement {
     }
 
     handleSavingUsers() {
-        console.log("handleSavingUsers");
-        // console.log(this.users);
         saveUsers({users: this.users})
             .then(result => {
-                console.log(result);
                 const message = result;
                 const messageVariant = message.includes('Saved') ? "success" : "error";
                 this.showToastMessage(messageVariant.toUpperCase(), message, messageVariant);
@@ -218,6 +212,10 @@ export default class OgUserList extends LightningElement {
             });
     }
 
+    handleEditUsers() {
+        this.onDoubleClickEdit();
+    }
+
     handleProfileSelection(event) {
         this.selectedProfileId = event.target.value;
         this.currentSelectedProfile = event.target.value;
@@ -225,34 +223,21 @@ export default class OgUserList extends LightningElement {
     }
 
     handleComboBoxChange(event) {
-        console.log("handleComboBoxChange");
         const fieldName = event.target.dataset.fieldname;
-        console.log(fieldName);
         const rowId = event.target.dataset.rowid;
-        console.log(rowId);
         const newValue = event.detail.value;
-        console.log(newValue);
         let element = this.users.find(ele => ele.Id === rowId);
         element[fieldName] = newValue;
-        console.log(JSON.stringify(element));
         this.users = [...this.users];
-        // console.log(JSON.stringify(this.users));
     }
 
     handleCheckboxChange(event) {
-        console.log("handleCheckboxChange");
         const fieldName = event.target.dataset.fieldname;
-        console.log(fieldName);
         const rowId = event.target.dataset.rowid;
-        console.log(rowId);
         const newValue = event.detail.checked;
-        console.log(newValue);
         let element = this.users.find(ele => ele.Id === rowId);
         element[fieldName] = newValue;
-        console.log(JSON.stringify(element));
         this.users = [...this.users];
-        // console.log(JSON.stringify(this.users));
-
     }
 
     showActiveUsersOnly() {
@@ -267,7 +252,6 @@ export default class OgUserList extends LightningElement {
     }
 
     addUser() {
-        console.log("addUser");
         this.showModal = true;
         this.showAddUser = true;
     }
@@ -321,8 +305,7 @@ export default class OgUserList extends LightningElement {
         if (this.userAction === 'reset') {
             resetUserPassword({
                 userId: this.confirmationUserId
-            }).then(result => {
-                console.log('successful reset');
+            }).then(() => {
                 const messageTitle = 'Password successfully reset for ' + userName;
                 this.showToastMessage("Successful Password Reset", messageTitle, "success");
             }).catch(error => {
@@ -332,8 +315,7 @@ export default class OgUserList extends LightningElement {
         } else if (this.userAction === 'freeze') {
             toggleFreezeUsers({
                 userId: this.confirmationUserId
-            }).then(result => {
-                console.log('successful toggle freeze');
+            }).then(() => {
                 const messageTitle = 'Freeze User completed for ' + userName;
                 this.showToastMessage('Successfully Froze User', messageTitle, "success");
             }).catch(error => {
@@ -358,25 +340,46 @@ export default class OgUserList extends LightningElement {
         this.confirmationIcon = 'action:manage_perm_sets';
         this.confirmationTitle = 'Manage Permission Sets for ' + this.confirmationUserName;
         this.showModal = true;
-        this.showManagePermissionSets = true;
         this.getPermissionSetAssignments(rowUserId);
+    }
+
+    manageGroups(event) {
+        const rowUserId = event.currentTarget.dataset.userid;
+        this.confirmationUserName = event.currentTarget.dataset.username;
+        this.confirmationUserId = event.currentTarget.dataset.userid;
+        this.confirmationIcon = 'utility:groups';
+        this.confirmationTitle = 'Manage Groups for ' + this.confirmationUserName;
+        this.showModal = true;
+        this.showManageGroups = true;
+        // this.getGroups(rowUserId);
     }
 
     getPermissionSetAssignments(userId) {
         getPermissionSets({
             userId: userId
         }).then(result => {
+            const currentPermSetAssignments = result.currentPermissionSetAssignments;
+            const potentialPermSetAssignemnts = result.potentialPermissionSets;
             let permissionSetURL, permissionSetName;
-            const data = result.map(row => {
+            const data = currentPermSetAssignments.map(row => {
                 permissionSetURL = this.sfdcBaseURL + `/lightning/setup/PermSets/home`;
                 permissionSetName = row.PermissionSet.Label !== undefined ? row.PermissionSet.Label : "";
                 return {...row, permissionSetURL, permissionSetName};
             });
             this.userPermissionSetAssignments = [...data];
+            this.permissionSetOptions = [...this.permissionSetOptions, {value: "", label: ""}];
+            for (let i = 0; i < potentialPermSetAssignemnts.length; i++) {
+                this.permissionSetOptions = [...this.permissionSetOptions, {
+                    value: potentialPermSetAssignemnts[i].Id,
+                    label: potentialPermSetAssignemnts[i].Label
+                }];
+            }
         }).catch(error => {
             this.error = error;
             console.log("Error in Save call back:", this.error);
             this.showToastMessage('Error Retrieving Permission Sets for User', '', "error");
+        }).finally(() => {
+            this.showManagePermissionSets = true;
         });
     }
 
@@ -386,7 +389,6 @@ export default class OgUserList extends LightningElement {
         const permSetId = row.Id;
         switch (actionName) {
             case "Delete":
-                console.log("Delete");
                 this.handleDelete(permSetId, 'Deleted Permission Set Assignment');
                 break;
             default:
@@ -394,7 +396,7 @@ export default class OgUserList extends LightningElement {
     }
 
     handleDelete(recId, message) {
-        deletePermissionSetAssignment({recordId: recId}).then(result => {
+        deletePermissionSetAssignment({recordId: recId}).then(() => {
             this.getPermissionSetAssignments(this.confirmationUserId);
             this.showToastMessage(message, '', 'success');
         }).catch(error => {
@@ -404,9 +406,18 @@ export default class OgUserList extends LightningElement {
     }
 
     hideManagePermissionSets() {
+        this.showManagePermissionSets = false;
+        this.closeModal();
+    }
+
+    hideManageGroups() {
+        this.showManageGroups = false;
+        this.closeModal();
+    }
+
+    closeModal() {
         this.confirmationUserName = '';
         this.confirmationUserId = '';
-        this.showManagePermissionSets = false;
         this.showModal = false;
     }
 
@@ -416,8 +427,7 @@ export default class OgUserList extends LightningElement {
         createPermissionSetAssignment({
             userId: currentAssigneeId,
             permissionSetId: currentPermissionSetId
-        }).then(result => {
-            console.log(JSON.stringify(result));
+        }).then(() => {
             this.getPermissionSetAssignments(this.confirmationUserId);
             this.showToastMessage('Successfully Created New Assignment', '', 'success');
             this.currentSelectPermissionSet = '';
@@ -429,24 +439,18 @@ export default class OgUserList extends LightningElement {
 
     resetNewAssignment() {
         this.currentSelectPermissionSet = '';
-        console.log(this.currentSelectPermissionSet);
     }
 
     handlePermissionSetChange(event) {
-        console.log("handlePermissionSetChange");
-        const newValue = event.detail.value;
-        this.currentSelectPermissionSet = newValue;
-        console.log(this.currentSelectPermissionSet);
+        this.currentSelectPermissionSet = event.detail.value;
     }
 
-    handleAddUserSubmit(event) {
-        // console.log("onsubmit: " + JSON.stringify(event.detail.fields));
+    handleAddUserSubmit() {
         // this.showSpinner = true;
         this.template.querySelector("lightning-record-edit-form").submit();
     }
 
     handleAddUserSuccess(event) {
-        console.log("handleAddUserSuccess");
         const message = "Record ID: " + event.detail.Id;
         this.showToastMessage("User Created", message, "success");
         this.closeAddUser();
@@ -454,8 +458,6 @@ export default class OgUserList extends LightningElement {
     }
 
     sortUsers(event) {
-        console.log('sortUsers');
-        // console.log(JSON.stringify(event.currentTarget.dataset));
         if (this.sortedColumn === event.currentTarget.dataset.sortapi) {
             this.sortedDirection = this.sortedDirection === "asc" ? "desc" : "asc";
         } else {
@@ -466,7 +468,6 @@ export default class OgUserList extends LightningElement {
         table.sort((a, b) => {
             return a[event.currentTarget.dataset.sortapi] > b[event.currentTarget.dataset.sortapi] ? 1 * reverse : -1 * reverse;
         });
-        // console.log(table);
         this.sortedColumn = event.currentTarget.dataset.sortapi;
         this.users = [...table];
         this.setRecordsToDisplay();
@@ -482,7 +483,7 @@ export default class OgUserList extends LightningElement {
         this.dispatchEvent(toastEvent);
     }
 
-    handleReset(event) {
+    handleReset() {
         const inputFields = this.template.querySelectorAll(
             "lightning-input-field"
         );
@@ -495,13 +496,11 @@ export default class OgUserList extends LightningElement {
 
     copyUserId(event) {
         const userId = event.currentTarget.dataset.userid;
-        // console.log(userId);
         this.copyTextToClipboard(userId);
     }
 
     //**** Pagination
     setRecordsToDisplay() {
-        console.log('setRecordsToDisplay');
         this.pageNo = 1;
         this.totalPages = Math.ceil(this.totalRecords / this.recordsperpage);
         this.preparePaginationList();
@@ -541,9 +540,8 @@ export default class OgUserList extends LightningElement {
         this.preparePaginationList();
     }
 
-    handlePage(button) {
-        this.pageNo = button.target.label;
-        this.preparePaginationList();
+    handlePrint() {
+        window.print();
     }
 
     preparePaginationList() {
@@ -552,9 +550,8 @@ export default class OgUserList extends LightningElement {
             let begin = (this.pageNo - 1) * parseInt(this.recordsperpage);
             let end = begin + parseInt(this.recordsperpage);
             this.recordsToDisplay = this.users.slice(begin, end);
-            console.log("preparePaginationList");
             // console.log(JSON.stringify(this.recordsToDisplay));
-            this.startRecord = begin + parseInt(1);
+            this.startRecord = begin + parseInt("1");
             this.endRecord = end > this.totalRecords ? this.totalRecords : end;
             this.end = end > this.totalRecords;
         } else {
@@ -570,7 +567,7 @@ export default class OgUserList extends LightningElement {
         let csvString = "";
         const includeTheseColumns = new Set(['Id', 'Name', 'Email', 'profileName', 'roleName',
             'LastLoginDate', 'IsActive']);
-        // this set eliminates the duplicates if have any duplicate keys
+        // this set eliminates the duplicates if any have duplicate keys
         let rowData = new Set();
         // console.log(JSON.stringify(this.users));
         // getting keys from data

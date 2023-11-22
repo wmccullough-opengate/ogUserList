@@ -5,13 +5,23 @@
 <!-- Og User List -->
 <template>
     <div style="min-height: 10vh">
-        <lightning-card title={title} icon-name="standard:user">
+        <lightning-card title={title} icon-name="action:user">
             <lightning-button label="Add User"
                               icon-name="utility:add"
                               slot="actions"
                               variant="neutral"
-                              onclick={addUser}></lightning-button>
+                              onclick={addUser}
+                              disabled={editIsDisabled}>
+            </lightning-button>
             <template if:false={hideSaveCancel}>
+                <lightning-button name="edit"
+                                  label="Edit"
+                                  icon-name="utility:edit"
+                                  slot="actions"
+                                  variant="brand-outline"
+                                  onclick={handleEditUsers}
+                                  disabled={editIsDisabled}>
+                </lightning-button>
                 <lightning-button name="save"
                                   label="Save"
                                   icon-name="utility:save"
@@ -24,10 +34,11 @@
                                   label="Cancel"
                                   icon-name="utility:close"
                                   slot="actions"
+                                  variant="brand-outline"
                                   onclick={cancelEditUsers}>
                 </lightning-button>
             </template>
-            <div class="slds-p-left_xx-small slds-p-top_x-small slds-p-bottom_x-small">
+            <div class="slds-var-m-left_xx-small slds-var-m-right_small">
                 <lightning-layout multiple-rows="false">
                     <lightning-layout-item size="4" flexibility="no-shrink">
                         <div class="slds-form-element">
@@ -51,19 +62,19 @@
                                           variant="neutral"
                                           onclick={clearSearch}></lightning-button>
                     </lightning-layout-item>
-                    <lightning-layout-item padding="horizontal-small">
+                    <lightning-layout-item size="2">
                         <lightning-combobox title="Profile" options={profileOptions} name="ProfileFilter"
                                             placeholder="Select a Profile" onchange={handleProfileSelection}
                                             value={currentSelectedProfile}
                                             variant="label-hidden" validity=""></lightning-combobox>
                     </lightning-layout-item>
-                    <lightning-layout-item padding="horizontal-small">
+                    <lightning-layout-item>
                         <lightning-button label="Active Users"
                                           icon-name="utility:user"
                                           variant={activeUsersVariant}
                                           onclick={showActiveUsersOnly}></lightning-button>
                     </lightning-layout-item>
-                    <lightning-layout-item padding="horizontal-small">
+                    <lightning-layout-item>
                         <lightning-button label="Clear Filters"
                                           icon-name="utility:clear"
                                           variant="neutral"
@@ -124,7 +135,7 @@
                             <td class="slds-size_1-of-12 slds-cell-wrap" data-label="Buttons">
                                 <div title="Buttons">
                                     <template if:true={item.IsActive}>
-                                        <a href={item.loginAs} target=_blank>
+                                        <a class="slds-no-print" href={item.loginAs} target=_blank>
                                             <lightning-button label="Login As" variant="brand"></lightning-button>
                                         </a>
                                     </template>
@@ -235,6 +246,13 @@
                                                     aria-label="Manage Permission Sets" size="x-small"
                                                     title="Manage Permission Sets"></lightning-icon>
                                 </a>
+                                <a key={item.key} data-userid={item.Id} data-username={item.Name}
+                                   onclick={manageGroups} class="slds-m-left_xx-small">
+                                    <lightning-icon icon-name="utility:groups"
+                                                    alternative-text="Manage Groups"
+                                                    aria-label="Manage Groups" size="x-small"
+                                                    title="Manage Groups"></lightning-icon>
+                                </a>
                             </td>
                         </tr>
                     </template>
@@ -297,17 +315,20 @@
                         <lightning-button-icon class="slds-float_right" onclick={downloadCSVFile}
                                                alternative-text="Click to download list as CSV"
                                                icon-name="utility:download"></lightning-button-icon>
+                        <lightning-button-icon class="slds-float_right" onclick={handlePrint}
+                                               alternative-text="Print Page"
+                                               icon-name="utility:print"></lightning-button-icon>
                     </lightning-layout-item>
                 </lightning-layout>
             </div>
         </lightning-card>
     </div>
+    <!-- Modal/Popup Box LWC starts here -->
     <template if:true={showModal}>
-        <!-- Modal/Popup Box LWC starts here -->
         <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
                  aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
             <div class="slds-modal__container">
-                <template if:true={showAddUser}>
+                <template lwc:if={showAddUser}>
                     <lightning-record-edit-form record-id={recordId} object-api-name="User"
                                                 onsuccess={handleAddUserSuccess} onsubmit={handleAddUserSubmit}>
                         <!-- Modal/Popup Box LWC header here -->
@@ -375,7 +396,7 @@
                         </footer>
                     </lightning-record-edit-form>
                 </template>
-                <template if:true={showFreezeResetConfirmation}>
+                <template lwc:if={showFreezeResetConfirmation}>
                     <lightning-card title={confirmationTitle} icon-name={confirmationIcon}>
                         <lightning-button
                                 slot="actions"
@@ -406,7 +427,7 @@
                         </div>
                     </lightning-card>
                 </template>
-                <template if:true={showManagePermissionSets}>
+                <template lwc:if={showManagePermissionSets}>
                     <lightning-card title={confirmationTitle} icon-name={confirmationIcon}>
                         <lightning-button
                                 slot="actions"
@@ -470,6 +491,75 @@
                                         label="Close"
                                         icon-name="utility:close"
                                         onclick={hideManagePermissionSets}
+                                ></lightning-button>
+                            </lightning-button-group>
+                        </div>
+                    </lightning-card>
+                </template>
+                <template lwc:if={showManageGroups}>
+                    <lightning-card title={confirmationTitle} icon-name={confirmationIcon}>
+                        <lightning-button
+                                slot="actions"
+                                variant="neutral"
+                                title="Close"
+                                label="Close"
+                                icon-name="utility:close"
+                                onclick={hideManageGroups}
+                        ></lightning-button>
+                        <lightning-layout>
+                            <lightning-layout-item class="slds-size_2-of-3" padding="horizontal-small">
+                                <lightning-datatable class="permSetTable" key-field="id"
+                                                     data={userPermissionSetAssignments}
+                                                     columns={permissionSetAssignmentColumns} column-widths-mode="auto"
+                                                     onrowaction={handlePermSetAction} hide-checkbox-column="true">
+                                </lightning-datatable>
+                            </lightning-layout-item>
+                            <lightning-layout-item class="slds-size_1-of-3" padding="horizontal-small">
+                                <lightning-card>
+                                    <div slot="title">
+                                        <h3>
+                                            <lightning-icon icon-name="action:new"
+                                                            size="xx-small"></lightning-icon>
+                                            <span class="slds-m-left_small">New Assignment</span>
+                                        </h3>
+                                    </div>
+                                    <div class="slds-card__body_inner">
+                                        <lightning-combobox
+                                                name="permissionset"
+                                                label="Permission Set"
+                                                value={currentSelectPermissionSet}
+                                                placeholder="Select Permission Set"
+                                                options={permissionSetOptions}
+                                                onchange={handlePermissionSetChange}
+                                                validity=""
+                                                required
+                                        ></lightning-combobox>
+                                    </div>
+                                    <div class="slds-float_right slds-m-top_medium">
+                                        <lightning-button
+                                                class="slds-m-top_small"
+                                                variant="brand"
+                                                onclick={saveNewAssignment}
+                                                name="save"
+                                                label="Save"
+                                                disabled={canSaveAssignment}></lightning-button>
+                                        <lightning-button variant="neutral"
+                                                          onclick={resetNewAssignment}
+                                                          label="Cancel">
+                                        </lightning-button>
+                                    </div>
+                                </lightning-card>
+                            </lightning-layout-item>
+                        </lightning-layout>
+                        <div slot="footer">
+                            <lightning-button-group>
+                                <lightning-button
+                                        class="slds-float_right"
+                                        variant="neutral"
+                                        title="Close"
+                                        label="Close"
+                                        icon-name="utility:close"
+                                        onclick={hideManageGroups}
                                 ></lightning-button>
                             </lightning-button-group>
                         </div>
